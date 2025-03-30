@@ -1,0 +1,180 @@
+/* Password Generator Styles */
+.password-generator {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.generate-password-btn {
+    background-color: transparent;
+    border: 1px dashed #cbd5e1;
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.generate-password-btn:hover {
+    background-color: rgba(79, 70, 229, 0.05);
+    border-color: var(--primary-color);
+}
+
+.generate-password-btn:active {
+    transform: scale(0.98);
+}
+
+.generate-password-btn i {
+    margin-right: 0.5rem;
+}
+
+.password-strength-meter {
+    height: 4px;
+    background-color: #e2e8f0;
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-bar.weak {
+    width: 25%;
+    background-color: #ef4444; /* Red */
+}
+
+.strength-bar.medium {
+    width: 50%;
+    background-color: #f59e0b; /* Orange */
+}
+
+.strength-bar.strong {
+    width: 75%;
+    background-color: #10b981; /* Green */
+}
+
+.strength-bar.very-strong {
+    width: 100%;
+    background-color: #3b82f6; /* Blue */
+}
+
+.strength-text {
+    font-size: 0.75rem;
+    color: var(--text-gray);
+    display: block;
+    text-align: right;
+    margin-top: 0.25rem;
+}
+
+.password-options {
+    background: #f8fafc;
+    padding: 0.75rem;
+    border-radius: var(--border-radius-md);
+    margin-top: 0.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.password-options-title {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-dark);
+}
+
+.option-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.35rem;
+}
+
+.option-row label {
+    font-size: 0.8rem;
+    color: var(--text-gray);
+    margin-left: 0.5rem;
+    user-select: none;
+}
+
+.option-row input[type="checkbox"],
+.option-row input[type="range"] {
+    cursor: pointer;
+}
+
+/* For displaying the generated password */
+.generated-password-display {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--border-radius-md);
+    padding: 0.75rem;
+    font-family: monospace;
+    font-size: 1rem;
+    margin: 0.5rem 0;
+    position: relative;
+    display: none; /* Hidden by default */
+    word-break: break-all;
+}
+
+.generated-password-display.show {
+    display: block;
+}
+
+.copy-password {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+}
+
+.copy-password:hover {
+    color: var(--accent-color);
+}
+
+/* Password tooltip */
+.password-tooltip {
+    display: none;
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    margin-bottom: 0.5rem;
+    z-index: 10;
+}
+
+.password-tooltip:after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+/* Animation for copy confirmation */
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+} 
