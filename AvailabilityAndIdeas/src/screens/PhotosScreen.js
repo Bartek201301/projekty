@@ -1,774 +1,678 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
-  View, 
   StyleSheet, 
-  ScrollView, 
+  View, 
   FlatList, 
   Image, 
-  TouchableOpacity, 
+  TouchableOpacity,
   Modal,
-  Dimensions
+  Dimensions,
+  Alert
 } from 'react-native';
 import { 
-  Surface, 
   Text, 
-  Title, 
-  Button, 
+  FAB, 
   Card, 
-  Avatar, 
+  Button, 
   TextInput, 
-  FAB,
+  useTheme,
   IconButton,
   Chip
 } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Sample data
-const DEMO_PHOTOS = [
+// Sample photos for demonstration
+const SAMPLE_PHOTOS = [
   {
     id: '1',
-    date: '2025-04-15',
-    title: 'Piknik w parku',
-    description: 'Wspólne biesiadowanie w Parku Łazienkowskim',
-    images: [
-      'https://images.unsplash.com/photo-1526139334526-f591a54b477c',
-      'https://images.unsplash.com/photo-1506784926709-22f1ec395907'
-    ],
-    userId: '1',
-    userName: 'Anna',
-    userAvatar: 'https://randomuser.me/api/portraits/women/1.jpg',
-    likes: 4,
-    comments: [
-      { id: '1', userId: '2', userName: 'Michał', text: 'Super zabawa!', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-      { id: '2', userId: '3', userName: 'Kasia', text: 'Musimy to powtórzyć!', avatar: 'https://randomuser.me/api/portraits/women/2.jpg' }
-    ]
+    title: 'Wycieczka w góry',
+    date: '2025-03-15',
+    imageUri: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606',
+    likes: 12,
+    createdBy: 'Anna K.',
+    backgroundColor: '#7B2CBF',
   },
   {
     id: '2',
-    date: '2025-04-20',
-    title: 'Turniej planszówek',
-    description: 'Wieczór z planszówkami u Tomka',
-    images: [
-      'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09',
-      'https://images.unsplash.com/photo-1606503153255-59d8b2e4739e',
-      'https://images.unsplash.com/photo-1611371805429-12b67e257b78'
-    ],
-    userId: '4',
-    userName: 'Tomek',
-    userAvatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-    likes: 5,
-    comments: [
-      { id: '3', userId: '5', userName: 'Ola', text: 'Monopoly najlepsze!', avatar: 'https://randomuser.me/api/portraits/women/3.jpg' }
-    ]
+    title: 'Kolacja w restauracji',
+    date: '2025-03-20',
+    imageUri: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0',
+    likes: 8,
+    createdBy: 'Tomasz W.',
+    backgroundColor: '#5A189A',
   },
   {
     id: '3',
-    date: '2025-05-01',
-    title: 'Majówka na działce',
-    description: 'Grillowanie i relaks',
-    images: [
-      'https://images.unsplash.com/photo-1555066931-4365d14bab8c',
-      'https://images.unsplash.com/photo-1602192509154-0b900ee1f851'
-    ],
-    userId: '2',
-    userName: 'Michał',
-    userAvatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-    likes: 3,
-    comments: []
-  }
+    title: 'Koncert zespołu',
+    date: '2025-03-25',
+    imageUri: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3',
+    likes: 15,
+    createdBy: 'Martyna S.',
+    backgroundColor: '#3C096C',
+  },
+  {
+    id: '4',
+    title: 'Piknik w parku',
+    date: '2025-03-27',
+    imageUri: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70',
+    likes: 10,
+    createdBy: 'Jakub N.',
+    backgroundColor: '#240046',
+  },
 ];
 
+const BACKGROUND_COLORS = [
+  { name: 'Fioletowy', value: '#7B2CBF' },
+  { name: 'Indygo', value: '#5A189A' },
+  { name: 'Ciemny fiolet', value: '#3C096C' },
+  { name: 'Bakłażan', value: '#240046' },
+  { name: 'Granatowy', value: '#10002B' },
+];
+
+const windowWidth = Dimensions.get('window').width;
+
+const GradientButton = ({ onPress, title, style }) => {
+  const theme = useTheme();
+  
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <LinearGradient
+        colors={[theme.colors.gradient1, theme.colors.gradient2]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[styles.gradientButton, style]}
+      >
+        <Text style={styles.buttonText}>{title}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+};
+
 const PhotosScreen = () => {
-  const [photos, setPhotos] = useState(DEMO_PHOTOS);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const theme = useTheme();
+  const [photos, setPhotos] = useState(SAMPLE_PHOTOS);
   const [modalVisible, setModalVisible] = useState(false);
-  const [fullImageModal, setFullImageModal] = useState(false);
-  const [fullImageUrl, setFullImageUrl] = useState('');
-  const [comment, setComment] = useState('');
-  const [addPhotoModalVisible, setAddPhotoModalVisible] = useState(false);
-  const [newEventTitle, setNewEventTitle] = useState('');
-  const [newEventDescription, setNewEventDescription] = useState('');
-  const [newEventDate, setNewEventDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedImages, setSelectedImages] = useState([]);
-
-  const currentUserId = '1'; // This would come from authentication in a real app
-
-  const openPhotoDetails = (photo) => {
-    setSelectedPhoto(photo);
-    setModalVisible(true);
-  };
-
-  const closePhotoDetails = () => {
-    setModalVisible(false);
-    setSelectedPhoto(null);
-  };
-
-  const viewFullImage = (url) => {
-    setFullImageUrl(url);
-    setFullImageModal(true);
-  };
-
-  const closeFullImage = () => {
-    setFullImageModal(false);
-    setFullImageUrl('');
-  };
-
-  const addComment = () => {
-    if (!comment.trim()) return;
+  const [photoDetailVisible, setPhotoDetailVisible] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [newPhotoTitle, setNewPhotoTitle] = useState('');
+  const [newPhotoDate, setNewPhotoDate] = useState(new Date().toISOString().split('T')[0]);
+  const [image, setImage] = useState(null);
+  const [bgColor, setBgColor] = useState(BACKGROUND_COLORS[0].value);
+  const [titleError, setTitleError] = useState('');
+  const [dateError, setDateError] = useState('');
+  
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
-    const newComment = {
-      id: Date.now().toString(),
-      userId: currentUserId,
-      userName: 'Anna', // This would be the current user's name in a real app
-      text: comment,
-      avatar: 'https://randomuser.me/api/portraits/women/1.jpg', // Current user's avatar
-    };
-    
-    const updatedPhoto = {
-      ...selectedPhoto,
-      comments: [...selectedPhoto.comments, newComment]
-    };
-    
-    const updatedPhotos = photos.map(p => 
-      p.id === selectedPhoto.id ? updatedPhoto : p
-    );
-    
-    setPhotos(updatedPhotos);
-    setSelectedPhoto(updatedPhoto);
-    setComment('');
-  };
-
-  const toggleLike = (photo) => {
-    const updatedPhoto = {
-      ...photo,
-      likes: photo.likes + 1,
-      // In a real app, we would track which users have liked the photo
-    };
-    
-    const updatedPhotos = photos.map(p => 
-      p.id === photo.id ? updatedPhoto : p
-    );
-    
-    setPhotos(updatedPhotos);
-    if (selectedPhoto && selectedPhoto.id === photo.id) {
-      setSelectedPhoto(updatedPhoto);
-    }
-  };
-
-  const pickImages = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      alert("Wymagane jest pozwolenie na dostęp do galerii zdjęć!");
+    if (status !== 'granted') {
+      Alert.alert(
+        'Potrzebne uprawnienia',
+        'Potrzebujemy dostępu do twojej galerii, aby wybrać zdjęcie',
+        [{ text: 'OK' }]
+      );
       return;
     }
     
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      selectionLimit: 5,
-      quality: 0.5,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
     });
     
     if (!result.canceled) {
-      setSelectedImages(result.assets.map(asset => asset.uri));
+      setImage(result.assets[0].uri);
     }
   };
-
-  const addNewPhotoEvent = () => {
-    if (!newEventTitle.trim() || selectedImages.length === 0) {
-      alert("Tytuł i przynajmniej jedno zdjęcie są wymagane!");
+  
+  const takePicture = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert(
+        'Potrzebne uprawnienia',
+        'Potrzebujemy dostępu do twojego aparatu, aby zrobić zdjęcie',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+    
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+  
+  const validateForm = () => {
+    let isValid = true;
+    
+    if (!newPhotoTitle.trim()) {
+      setTitleError('Tytuł jest wymagany');
+      isValid = false;
+    } else {
+      setTitleError('');
+    }
+    
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!newPhotoDate.trim()) {
+      setDateError('Data jest wymagana');
+      isValid = false;
+    } else if (!dateRegex.test(newPhotoDate)) {
+      setDateError('Niepoprawny format daty (RRRR-MM-DD)');
+      isValid = false;
+    } else {
+      setDateError('');
+    }
+    
+    if (!image) {
+      Alert.alert('Brak zdjęcia', 'Wybierz lub zrób zdjęcie, aby kontynuować');
+      isValid = false;
+    }
+    
+    return isValid;
+  };
+  
+  const handleAddPhoto = () => {
+    if (!validateForm()) {
       return;
     }
     
     const newPhoto = {
       id: Date.now().toString(),
-      date: newEventDate,
-      title: newEventTitle,
-      description: newEventDescription,
-      images: selectedImages,
-      userId: currentUserId,
-      userName: 'Anna', // This would be the current user's name in a real app
-      userAvatar: 'https://randomuser.me/api/portraits/women/1.jpg', // Current user's avatar
+      title: newPhotoTitle,
+      date: newPhotoDate,
+      imageUri: image,
       likes: 0,
-      comments: []
+      createdBy: 'Bartosz M.', // This would come from authentication in a real app
+      backgroundColor: bgColor,
     };
     
     setPhotos([newPhoto, ...photos]);
-    setAddPhotoModalVisible(false);
-    resetNewPhotoForm();
+    setModalVisible(false);
+    
+    // Reset form
+    setNewPhotoTitle('');
+    setNewPhotoDate(new Date().toISOString().split('T')[0]);
+    setImage(null);
+    setBgColor(BACKGROUND_COLORS[0].value);
+    setTitleError('');
+    setDateError('');
   };
-
-  const resetNewPhotoForm = () => {
-    setNewEventTitle('');
-    setNewEventDescription('');
-    setNewEventDate(new Date().toISOString().split('T')[0]);
-    setSelectedImages([]);
+  
+  const handlePhotoPress = (photo) => {
+    setSelectedPhoto(photo);
+    setPhotoDetailVisible(true);
   };
-
-  const removeSelectedImage = (index) => {
-    setSelectedImages(selectedImages.filter((_, i) => i !== index));
+  
+  const toggleLike = (photoId) => {
+    setPhotos(
+      photos.map(photo => {
+        if (photo.id === photoId) {
+          return {
+            ...photo,
+            likes: photo.likes + 1,
+          };
+        }
+        return photo;
+      })
+    );
   };
-
-  const renderPhotoItem = ({ item }) => (
-    <Card style={styles.photoCard}>
-      <Card.Title
-        title={item.title}
-        subtitle={`${new Date(item.date).toLocaleDateString('pl-PL')} • ${item.userName}`}
-        left={(props) => <Avatar.Image {...props} source={{ uri: item.userAvatar }} />}
-      />
-      
-      <Card.Content>
-        {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
-      </Card.Content>
-      
-      <View style={styles.imageGrid}>
-        {item.images.slice(0, 3).map((image, index) => (
-          <TouchableOpacity 
-            key={`${item.id}-image-${index}`} 
-            style={[
-              styles.imageContainer, 
-              item.images.length === 1 && styles.singleImageContainer
-            ]}
-            onPress={() => viewFullImage(image)}
-          >
-            <Image 
-              source={{ uri: image }} 
-              style={styles.image} 
-              resizeMode="cover"
-            />
-            {index === 2 && item.images.length > 3 && (
-              <View style={styles.moreImagesOverlay}>
-                <Text style={styles.moreImagesText}>+{item.images.length - 3}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
-      
-      <Card.Actions style={styles.cardActions}>
-        <Button 
-          icon="thumb-up" 
-          onPress={() => toggleLike(item)}
-          style={styles.actionButton}
-        >
-          {item.likes}
-        </Button>
-        <Button 
-          icon="comment" 
-          onPress={() => openPhotoDetails(item)}
-          style={styles.actionButton}
-        >
-          {item.comments.length}
-        </Button>
-        <View style={styles.spacer} />
-        <Button 
-          icon="dots-horizontal" 
-          onPress={() => openPhotoDetails(item)}
-        />
-      </Card.Actions>
-    </Card>
-  );
-
-  // Photo details modal
-  const renderPhotoDetailsModal = () => (
-    <Modal
-      animationType="slide"
-      transparent={false}
-      visible={modalVisible}
-      onRequestClose={closePhotoDetails}
-    >
-      {selectedPhoto && (
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <IconButton 
-              icon="arrow-left" 
-              size={24} 
-              onPress={closePhotoDetails} 
-            />
-            <Title style={styles.modalTitle}>{selectedPhoto.title}</Title>
-            <View style={styles.modalSpacer} />
-          </View>
-          
-          <ScrollView>
-            <View style={styles.modalContent}>
-              <View style={styles.modalUserInfo}>
-                <Avatar.Image 
-                  source={{ uri: selectedPhoto.userAvatar }} 
-                  size={40} 
-                />
-                <View style={styles.userTextContainer}>
-                  <Text style={styles.userName}>{selectedPhoto.userName}</Text>
-                  <Text style={styles.dateText}>
-                    {new Date(selectedPhoto.date).toLocaleDateString('pl-PL')}
-                  </Text>
-                </View>
-              </View>
-              
-              {selectedPhoto.description ? (
-                <Text style={styles.modalDescription}>{selectedPhoto.description}</Text>
-              ) : null}
-              
-              <View style={styles.modalImageContainer}>
-                {selectedPhoto.images.map((image, index) => (
-                  <TouchableOpacity 
-                    key={`detail-image-${index}`} 
-                    style={styles.modalImage}
-                    onPress={() => viewFullImage(image)}
-                  >
-                    <Image 
-                      source={{ uri: image }} 
-                      style={styles.fullWidthImage} 
-                      resizeMode="cover"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-              
-              <View style={styles.actionsContainer}>
-                <Button 
-                  icon="thumb-up" 
-                  mode="outlined" 
-                  onPress={() => toggleLike(selectedPhoto)}
-                  style={styles.likeButton}
-                >
-                  {selectedPhoto.likes} Polubień
-                </Button>
-              </View>
-              
-              <View style={styles.commentsContainer}>
-                <Title style={styles.commentsTitle}>Komentarze ({selectedPhoto.comments.length})</Title>
-                
-                {selectedPhoto.comments.map(comment => (
-                  <View key={comment.id} style={styles.commentItem}>
-                    <Avatar.Image 
-                      source={{ uri: comment.avatar }} 
-                      size={36} 
-                      style={styles.commentAvatar}
-                    />
-                    <View style={styles.commentContent}>
-                      <Text style={styles.commentUserName}>{comment.userName}</Text>
-                      <Text>{comment.text}</Text>
-                    </View>
-                  </View>
-                ))}
-                
-                {selectedPhoto.comments.length === 0 && (
-                  <Text style={styles.noCommentsText}>
-                    Bądź pierwszy, który skomentuje to zdjęcie
-                  </Text>
-                )}
-                
-                <View style={styles.addCommentContainer}>
-                  <Avatar.Image 
-                    source={{ uri: 'https://randomuser.me/api/portraits/women/1.jpg' }} 
-                    size={36} 
-                    style={styles.commentAvatar}
-                  />
-                  <TextInput
-                    placeholder="Dodaj komentarz..."
-                    value={comment}
-                    onChangeText={setComment}
-                    style={styles.commentInput}
-                    right={<TextInput.Icon icon="send" onPress={addComment} disabled={!comment.trim()} />}
-                  />
-                </View>
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      )}
-    </Modal>
-  );
-
-  // Full image modal
-  const renderFullImageModal = () => (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={fullImageModal}
-      onRequestClose={closeFullImage}
-    >
-      <TouchableOpacity 
-        style={styles.fullImageContainer} 
-        activeOpacity={1} 
-        onPress={closeFullImage}
+  
+  const handleAddButton = () => {
+    setNewPhotoTitle('');
+    setNewPhotoDate(new Date().toISOString().split('T')[0]);
+    setImage(null);
+    setBgColor(BACKGROUND_COLORS[0].value);
+    setTitleError('');
+    setDateError('');
+    setModalVisible(true);
+  };
+  
+  const renderPhoto = ({ item }) => {
+    return (
+      <Card
+        style={[styles.photoCard, { backgroundColor: item.backgroundColor }]}
+        onPress={() => handlePhotoPress(item)}
       >
-        <Image 
-          source={{ uri: fullImageUrl }} 
-          style={styles.fullScreenImage} 
-          resizeMode="contain"
-        />
-        <IconButton 
-          icon="close" 
-          color="#fff" 
-          size={30} 
-          style={styles.closeButton} 
-          onPress={closeFullImage} 
-        />
-      </TouchableOpacity>
-    </Modal>
-  );
-
-  // Add new photo modal
-  const renderAddPhotoModal = () => (
-    <Modal
-      animationType="slide"
-      transparent={false}
-      visible={addPhotoModalVisible}
-      onRequestClose={() => setAddPhotoModalVisible(false)}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <IconButton 
-            icon="close" 
-            size={24} 
-            onPress={() => {
-              setAddPhotoModalVisible(false);
-              resetNewPhotoForm();
-            }} 
+        <View style={styles.photoContainer}>
+          <Image
+            source={{ uri: item.imageUri }}
+            style={styles.photo}
+            resizeMode="cover"
           />
-          <Title style={styles.modalTitle}>Dodaj nowe zdjęcia</Title>
-          <IconButton 
-            icon="check" 
-            size={24} 
-            onPress={addNewPhotoEvent}
-            disabled={!newEventTitle.trim() || selectedImages.length === 0} 
-          />
-        </View>
-        
-        <ScrollView style={styles.addPhotoContent}>
-          <TextInput
-            label="Tytuł wydarzenia *"
-            value={newEventTitle}
-            onChangeText={setNewEventTitle}
-            mode="outlined"
-            style={styles.input}
-          />
-          
-          <TextInput
-            label="Opis (opcjonalnie)"
-            value={newEventDescription}
-            onChangeText={setNewEventDescription}
-            mode="outlined"
-            multiline
-            numberOfLines={3}
-            style={styles.input}
-          />
-          
-          <TextInput
-            label="Data"
-            value={newEventDate}
-            onChangeText={setNewEventDate}
-            mode="outlined"
-            style={styles.input}
-            right={<TextInput.Icon icon="calendar" />}
-          />
-          
-          <Button 
-            mode="contained" 
-            icon="image-multiple" 
-            onPress={pickImages}
-            style={styles.uploadButton}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.photoGradient}
           >
-            Wybierz zdjęcia
-          </Button>
-          
-          {selectedImages.length > 0 && (
-            <View style={styles.selectedImagesContainer}>
-              <Title style={styles.selectedImagesTitle}>
-                Wybrane zdjęcia ({selectedImages.length})
-              </Title>
-              <View style={styles.selectedImagesGrid}>
-                {selectedImages.map((uri, index) => (
-                  <View key={index} style={styles.selectedImageContainer}>
-                    <Image source={{ uri }} style={styles.selectedImage} />
-                    <IconButton
-                      icon="close-circle"
-                      color="#fff"
-                      size={20}
-                      style={styles.removeImageButton}
-                      onPress={() => removeSelectedImage(index)}
-                    />
-                  </View>
-                ))}
+            <Text style={styles.photoTitle}>{item.title}</Text>
+            <View style={styles.photoMeta}>
+              <Text style={styles.photoDate}>
+                {item.date.split('-').reverse().join('.')}
+              </Text>
+              <View style={styles.likeContainer}>
+                <Text style={styles.likeCount}>{item.likes}</Text>
+                <MaterialCommunityIcons name="heart" size={16} color="#FF4D94" />
               </View>
             </View>
-          )}
-        </ScrollView>
-      </View>
-    </Modal>
-  );
-
+          </LinearGradient>
+        </View>
+      </Card>
+    );
+  };
+  
   return (
     <View style={styles.container}>
-      <Surface style={styles.header}>
-        <Title style={styles.headerTitle}>Zdjęcia z wydarzeń</Title>
-        <Text style={styles.headerSubtitle}>
-          Przeglądaj zdjęcia z wspólnych spotkań i dodaj własne
-        </Text>
-      </Surface>
-      
       <FlatList
         data={photos}
-        renderItem={renderPhotoItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        renderItem={renderPhoto}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.photoList}
+        numColumns={2}
       />
       
       <FAB
         style={styles.fab}
-        icon="camera"
-        onPress={() => setAddPhotoModalVisible(true)}
-        label="Dodaj zdjęcia"
+        icon="plus"
+        color="#FFFFFF"
+        onPress={handleAddButton}
       />
       
-      {renderPhotoDetailsModal()}
-      {renderFullImageModal()}
-      {renderAddPhotoModal()}
+      {/* Add Photo Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Dodaj nowe zdjęcie</Text>
+            
+            <TextInput
+              label="Tytuł zdjęcia"
+              value={newPhotoTitle}
+              onChangeText={text => {
+                setNewPhotoTitle(text);
+                if (titleError) setTitleError('');
+              }}
+              mode="outlined"
+              style={styles.input}
+              error={!!titleError}
+              theme={{ roundness: theme.roundness }}
+            />
+            {titleError ? <Text style={styles.errorText}>{titleError}</Text> : null}
+            
+            <TextInput
+              label="Data (RRRR-MM-DD)"
+              value={newPhotoDate}
+              onChangeText={text => {
+                setNewPhotoDate(text);
+                if (dateError) setDateError('');
+              }}
+              mode="outlined"
+              style={styles.input}
+              error={!!dateError}
+              theme={{ roundness: theme.roundness }}
+            />
+            {dateError ? <Text style={styles.errorText}>{dateError}</Text> : null}
+            
+            <Text style={styles.sectionTitle}>Tło zdjęcia</Text>
+            <View style={styles.colorSelector}>
+              {BACKGROUND_COLORS.map((color) => (
+                <TouchableOpacity
+                  key={color.value}
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: color.value },
+                    bgColor === color.value && styles.selectedColor,
+                  ]}
+                  onPress={() => setBgColor(color.value)}
+                />
+              ))}
+            </View>
+            
+            <Text style={styles.sectionTitle}>Zdjęcie</Text>
+            <View style={styles.imageSelector}>
+              {image ? (
+                <View style={styles.imagePreviewContainer}>
+                  <Image source={{ uri: image }} style={styles.imagePreview} />
+                  <IconButton
+                    icon="close-circle"
+                    size={28}
+                    color="#FF4D4D"
+                    style={styles.removeImageButton}
+                    onPress={() => setImage(null)}
+                  />
+                </View>
+              ) : (
+                <View style={styles.imageActions}>
+                  <Button
+                    mode="outlined"
+                    icon="camera"
+                    onPress={takePicture}
+                    style={styles.imageButton}
+                  >
+                    Zrób zdjęcie
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    icon="image"
+                    onPress={pickImage}
+                    style={styles.imageButton}
+                  >
+                    Wybierz zdjęcie
+                  </Button>
+                </View>
+              )}
+            </View>
+            
+            <View style={styles.modalButtons}>
+              <Button
+                mode="outlined"
+                onPress={() => setModalVisible(false)}
+                style={styles.cancelButton}
+              >
+                Anuluj
+              </Button>
+              <GradientButton
+                title="ZAPISZ"
+                onPress={handleAddPhoto}
+                style={styles.saveButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Photo Detail Modal */}
+      <Modal
+        visible={photoDetailVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPhotoDetailVisible(false)}
+      >
+        {selectedPhoto && (
+          <View style={styles.photoDetailOverlay}>
+            <View style={styles.photoDetailHeader}>
+              <IconButton
+                icon="arrow-left"
+                size={28}
+                color="#FFFFFF"
+                onPress={() => setPhotoDetailVisible(false)}
+              />
+              <Text style={styles.photoDetailTitle}>{selectedPhoto.title}</Text>
+              <View style={{ width: 40 }} />
+            </View>
+            
+            <Image
+              source={{ uri: selectedPhoto.imageUri }}
+              style={styles.photoDetailImage}
+              resizeMode="contain"
+            />
+            
+            <View style={styles.photoDetailFooter}>
+              <View style={styles.photoDetailInfo}>
+                <Chip icon="calendar" style={styles.chip}>
+                  {selectedPhoto.date.split('-').reverse().join('.')}
+                </Chip>
+                <Chip icon="account" style={styles.chip}>
+                  {selectedPhoto.createdBy}
+                </Chip>
+              </View>
+              
+              <TouchableOpacity
+                style={styles.likeButton}
+                onPress={() => {
+                  toggleLike(selectedPhoto.id);
+                  // Update selected photo likes count for UI
+                  setSelectedPhoto({
+                    ...selectedPhoto,
+                    likes: selectedPhoto.likes + 1,
+                  });
+                }}
+              >
+                <MaterialCommunityIcons name="heart" size={24} color="#FF4D94" />
+                <Text style={styles.likeButtonText}>{selectedPhoto.likes}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </Modal>
     </View>
   );
 };
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f6f6f6',
+    backgroundColor: '#121212',
   },
-  header: {
-    padding: 15,
-    paddingTop: 0,
-    backgroundColor: 'transparent',
-    elevation: 0,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    color: '#666',
-  },
-  listContainer: {
+  photoList: {
     padding: 10,
-    paddingTop: 0,
+    paddingBottom: 80, // Space for FAB
   },
   photoCard: {
-    marginBottom: 16,
-    borderRadius: 10,
+    flex: 1,
+    margin: 5,
+    borderRadius: 16,
     overflow: 'hidden',
-    elevation: 2,
+    elevation: 4,
+    height: 200,
   },
-  description: {
-    marginBottom: 12,
+  photoContainer: {
+    flex: 1,
+    position: 'relative',
   },
-  imageGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 10,
-  },
-  imageContainer: {
-    width: '33.33%',
-    aspectRatio: 1,
-    padding: 1,
-  },
-  singleImageContainer: {
-    width: '100%',
-    aspectRatio: 2,
-  },
-  image: {
+  photo: {
     width: '100%',
     height: '100%',
-    borderRadius: 2,
   },
-  moreImagesOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  photoGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    padding: 12,
+    justifyContent: 'flex-end',
   },
-  moreImagesText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  cardActions: {
-    justifyContent: 'flex-start',
-    paddingHorizontal: 8,
-  },
-  actionButton: {
-    marginRight: 5,
-  },
-  spacer: {
-    flex: 1,
-  },
-  // Modal styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  modalTitle: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 18,
-  },
-  modalSpacer: {
-    width: 40,
-  },
-  modalContent: {
-    padding: 15,
-  },
-  modalUserInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  userTextContainer: {
-    marginLeft: 10,
-  },
-  userName: {
-    fontWeight: 'bold',
+  photoTitle: {
+    color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
-  dateText: {
-    color: '#666',
+  photoMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  photoDate: {
+    color: '#DDDDDD',
     fontSize: 12,
   },
-  modalDescription: {
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  modalImageContainer: {
-    marginBottom: 15,
-  },
-  modalImage: {
-    width: '100%',
-    marginBottom: 5,
-  },
-  fullWidthImage: {
-    width: '100%',
-    aspectRatio: 16/9,
-    borderRadius: 5,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  likeButton: {
-    flex: 1,
-  },
-  commentsContainer: {
-    marginTop: 10,
-  },
-  commentsTitle: {
-    fontSize: 18,
-    marginBottom: 15,
-  },
-  commentItem: {
-    flexDirection: 'row',
-    marginBottom: 15,
-  },
-  commentAvatar: {
-    marginRight: 10,
-  },
-  commentContent: {
-    flex: 1,
-    backgroundColor: '#f7f7f7',
-    padding: 10,
-    borderRadius: 10,
-  },
-  commentUserName: {
-    fontWeight: 'bold',
-    marginBottom: 3,
-  },
-  noCommentsText: {
-    color: '#666',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  addCommentContainer: {
+  likeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 15,
   },
-  commentInput: {
-    flex: 1,
-    backgroundColor: '#f7f7f7',
-    borderRadius: 20,
-    height: 40,
-  },
-  // Full image modal styles
-  fullImageContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullScreenImage: {
-    width: '100%',
-    height: '80%',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  // Add photo modal styles
-  addPhotoContent: {
-    padding: 15,
-  },
-  input: {
-    marginBottom: 15,
-  },
-  uploadButton: {
-    marginVertical: 20,
-  },
-  selectedImagesContainer: {
-    marginTop: 10,
-    marginBottom: 30,
-  },
-  selectedImagesTitle: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  selectedImagesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  selectedImageContainer: {
-    width: width / 3 - 14,
-    height: width / 3 - 14,
-    margin: 4,
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  selectedImage: {
-    width: '100%',
-    height: '100%',
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
+  likeCount: {
+    color: '#FFFFFF',
+    marginRight: 4,
+    fontSize: 12,
   },
   fab: {
     position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#6200ee',
+    right: 16,
+    bottom: 16,
+    backgroundColor: '#9D4EDD',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    marginBottom: 5,
+    backgroundColor: '#2E2E2E',
+  },
+  errorText: {
+    color: '#FF4D4D',
+    marginBottom: 15,
+    marginLeft: 10,
+    fontSize: 12,
+  },
+  sectionTitle: {
+    color: '#FFFFFF',
+    marginTop: 15,
+    marginBottom: 10,
+    fontSize: 16,
+  },
+  colorSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  colorOption: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  selectedColor: {
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  imageSelector: {
+    marginBottom: 20,
+  },
+  imageActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  imageButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    borderColor: '#444444',
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    alignItems: 'center',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  cancelButton: {
+    flex: 1,
+    marginRight: 10,
+    borderColor: '#444444',
+  },
+  saveButton: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  gradientButton: {
+    borderRadius: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    elevation: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  photoDetailOverlay: {
+    flex: 1,
+    backgroundColor: '#121212',
+  },
+  photoDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 10,
+    paddingTop: 40,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  photoDetailTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    flex: 1,
+  },
+  photoDetailImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  photoDetailFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  photoDetailInfo: {
+    flexDirection: 'row',
+  },
+  chip: {
+    marginRight: 8,
+    backgroundColor: '#2E2E2E',
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 77, 148, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  likeButtonText: {
+    color: '#FFFFFF',
+    marginLeft: 8,
+    fontWeight: 'bold',
   },
 });
 

@@ -1,41 +1,57 @@
 # Dostępność i Pomysły
 
-Aplikacja umożliwiająca grupie 15 znajomych zaznaczanie wspólnej dostępności, dzielenie się pomysłami na spędzanie czasu oraz przechowywanie zdjęć z wydarzeń.
+Aplikacja do planowania spotkań i udostępniania pomysłów w gronie przyjaciół.
 
 ## Funkcje
 
-- Logowanie dla zamkniętej grupy 15 użytkowników
-- Kalendarz z oznaczeniem dostępności
-- Dodawanie pomysłów na spędzanie wspólnego czasu
-- Przeglądanie dostępności innych użytkowników
-- Dodawanie i przeglądanie zdjęć z wydarzeń
-- Komentowanie pomysłów i zdjęć
-- Profile użytkowników ze statusami
-- Powiadomienia o aktywnościach (opcjonalnie)
+- **Kalendarz** - planowanie wydarzeń i sprawdzanie dostępności znajomych
+- **Galeria zdjęć** - udostępnianie zdjęć z wydarzeń
+- **Profil użytkownika** - personalizacja konta i ustawienia powiadomień
+- **Szczegóły wydarzeń** - wyświetlanie informacji o wydarzeniach i zarządzanie uczestnikami
 
 ## Technologie
 
 - React Native
-- Firebase (Authentication, Firestore, Storage)
 - Expo
+- React Navigation
+- React Native Paper (Material Design)
+- Expo Linear Gradient
+- React Native Calendars
+
+## Wymagania
+
+- Node.js 16+
+- Expo CLI
+- Expo Go na urządzenie mobilne (do testowania)
 
 ## Instalacja
 
-```bash
-# Instalacja zależności
-npm install
+1. Sklonuj repozytorium:
+   ```
+   git clone <link-do-repozytorium>
+   cd AvailabilityAndIdeas
+   ```
 
-# Uruchomienie aplikacji
-npm start
-```
+2. Zainstaluj zależności:
+   ```
+   npm install
+   ```
 
-## Architektura aplikacji
+3. Uruchom aplikację:
+   ```
+   npx expo start
+   ```
 
-```
-src/
-  ├── assets/         # Grafiki, ikony, zasoby statyczne
-  ├── components/     # Komponenty współdzielone
-  ├── navigation/     # Nawigacja aplikacji
-  ├── screens/        # Ekrany aplikacji
-  └── services/       # Usługi (API, Firebase, etc.)
-``` 
+4. Zeskanuj kod QR używając aplikacji Expo Go na urządzeniu mobilnym lub naciśnij 'w' w terminalu, aby otworzyć w przeglądarce.
+
+## Struktura projektu
+
+- `/src/screens` - Ekrany aplikacji
+- `/src/components` - Komponenty wielokrotnego użytku
+- `/src/navigation` - Konfiguracja nawigacji
+- `/src/services` - Usługi (np. integracja z bazą danych)
+- `/assets` - Zasoby statyczne (obrazy, czcionki)
+
+## Autorzy
+
+Aplikacja stworzona przez zespół pasjonatów dla grupy przyjaciół. 

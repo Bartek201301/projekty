@@ -1,224 +1,295 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { TextInput, Button, Text, Title, Surface } from 'react-native-paper';
-import * as ImagePicker from 'expo-image-picker';
+import { 
+  StyleSheet, 
+  View, 
+  ScrollView, 
+  KeyboardAvoidingView, 
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard
+} from 'react-native';
+import { 
+  Text, 
+  TextInput, 
+  Button, 
+  Surface, 
+  useTheme,
+  HelperText
+} from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+
+const GradientButton = ({ onPress, title, style }) => {
+  const theme = useTheme();
+  
+  return (
+    <TouchableWithoutFeedback onPress={onPress}>
+      <LinearGradient
+        colors={[theme.colors.gradient1, theme.colors.gradient2]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[styles.gradientButton, style]}
+      >
+        <Text style={styles.buttonText}>{title}</Text>
+      </LinearGradient>
+    </TouchableWithoutFeedback>
+  );
+};
 
 const RegisterScreen = ({ navigation }) => {
-  const [name, setName] = useState('');
+  const [nick, setNick] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [status, setStatus] = useState('');
-  const [profileImage, setProfileImage] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [nickError, setNickError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const theme = useTheme();
 
-  const pickImage = async () => {
-    // Ask for permission to access the camera roll
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      alert("Wymagane jest pozwolenie na dostęp do galerii zdjęć!");
-      return;
+  const validateNick = (nick) => {
+    if (!nick) {
+      setNickError('Nazwa użytkownika jest wymagana');
+      return false;
+    } else if (nick.length < 3) {
+      setNickError('Nazwa użytkownika musi mieć co najmniej 3 znaki');
+      return false;
     }
-    
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
-    });
-    
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
-    }
+    setNickError('');
+    return true;
   };
 
-  const handleRegister = async () => {
-    // Basic validation
-    if (!name || !email || !password || !confirmPassword) {
-      setError('Wszystkie pola są wymagane');
-      return;
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError('Email jest wymagany');
+      return false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Niepoprawny format email');
+      return false;
     }
-    
-    if (password !== confirmPassword) {
-      setError('Hasła nie są identyczne');
-      return;
+    setEmailError('');
+    return true;
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      setPasswordError('Hasło jest wymagane');
+      return false;
+    } else if (password.length < 6) {
+      setPasswordError('Hasło musi mieć co najmniej 6 znaków');
+      return false;
     }
-    
-    setLoading(true);
-    setError('');
-    
-    // In a real app, we would register with Firebase here
-    try {
-      // Simulate registration
-      setTimeout(() => {
-        console.log('Registration successful for:', { name, email, status, profileImage });
-        setLoading(false);
-        navigation.goBack(); // Navigate back to login
-      }, 1500);
-    } catch (error) {
-      setError('Wystąpił problem podczas rejestracji');
-      setLoading(false);
+    setPasswordError('');
+    return true;
+  };
+
+  const validateConfirmPassword = (confirmPassword) => {
+    if (confirmPassword !== password) {
+      setConfirmPasswordError('Hasła nie są identyczne');
+      return false;
+    }
+    setConfirmPasswordError('');
+    return true;
+  };
+
+  const handleRegister = () => {
+    const isNickValid = validateNick(nick);
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+    const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
+
+    if (isNickValid && isEmailValid && isPasswordValid && isConfirmPasswordValid) {
+      // In a real app, we would create a user with Firebase here
+      console.log('Registering with:', nick, email, password);
+      navigation.navigate('Login');
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Surface style={styles.surfaceContainer}>
-          <Title style={styles.title}>Utwórz konto</Title>
-          
-          <View style={styles.profileImageContainer}>
-            <TouchableOpacity onPress={pickImage}>
-              {profileImage ? (
-                <Image source={{ uri: profileImage }} style={styles.profileImage} />
-              ) : (
-                <View style={styles.placeholderImage}>
-                  <Text style={styles.placeholderText}>Dodaj zdjęcie</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.formContainer}>
-            <TextInput
-              label="Imię"
-              value={name}
-              onChangeText={setName}
-              mode="outlined"
-              style={styles.input}
-            />
-            
-            <TextInput
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              mode="outlined"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              style={styles.input}
-            />
-            
-            <TextInput
-              label="Hasło"
-              value={password}
-              onChangeText={setPassword}
-              mode="outlined"
-              secureTextEntry
-              style={styles.input}
-            />
-            
-            <TextInput
-              label="Potwierdź hasło"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              mode="outlined"
-              secureTextEntry
-              style={styles.input}
-            />
-            
-            <TextInput
-              label="Status (opcjonalnie)"
-              value={status}
-              onChangeText={setStatus}
-              mode="outlined"
-              placeholder="Np. Gotowy na przygody!"
-              style={styles.input}
-            />
-            
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-            
-            <Button 
-              mode="contained" 
-              onPress={handleRegister}
-              loading={loading}
-              disabled={loading}
-              style={styles.button}
-            >
-              Zarejestruj się
-            </Button>
-            
-            <View style={styles.loginContainer}>
-              <Text>Masz już konto? </Text>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Text style={styles.loginText}>Zaloguj się</Text>
-              </TouchableOpacity>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <StatusBar style="light" />
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <Surface style={styles.surface}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Utwórz konto</Text>
+              <Text style={styles.subtitle}>Dołącz do swojej grupy przyjaciół</Text>
             </View>
-          </View>
-        </Surface>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            
+            <View style={styles.inputContainer}>
+              <TextInput
+                label="Nazwa użytkownika (nick)"
+                value={nick}
+                onChangeText={text => {
+                  setNick(text);
+                  if (nickError) validateNick(text);
+                }}
+                mode="outlined"
+                style={styles.input}
+                autoCapitalize="none"
+                error={!!nickError}
+                theme={{ roundness: theme.roundness }}
+              />
+              {nickError ? <Text style={styles.errorText}>{nickError}</Text> : null}
+              
+              <TextInput
+                label="Email"
+                value={email}
+                onChangeText={text => {
+                  setEmail(text);
+                  if (emailError) validateEmail(text);
+                }}
+                mode="outlined"
+                style={styles.input}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                error={!!emailError}
+                theme={{ roundness: theme.roundness }}
+              />
+              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+              
+              <TextInput
+                label="Hasło"
+                value={password}
+                onChangeText={text => {
+                  setPassword(text);
+                  if (passwordError) validatePassword(text);
+                  if (confirmPassword) validateConfirmPassword(confirmPassword);
+                }}
+                mode="outlined"
+                style={styles.input}
+                secureTextEntry
+                error={!!passwordError}
+                theme={{ roundness: theme.roundness }}
+              />
+              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+              
+              <TextInput
+                label="Potwierdź hasło"
+                value={confirmPassword}
+                onChangeText={text => {
+                  setConfirmPassword(text);
+                  if (confirmPasswordError) validateConfirmPassword(text);
+                }}
+                mode="outlined"
+                style={styles.input}
+                secureTextEntry
+                error={!!confirmPasswordError}
+                theme={{ roundness: theme.roundness }}
+              />
+              {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+            </View>
+            
+            <View style={styles.buttonContainer}>
+              <GradientButton
+                title="ZAREJESTRUJ SIĘ"
+                onPress={handleRegister}
+                style={styles.registerButton}
+              />
+              
+              <View style={styles.loginContainer}>
+                <Text style={styles.loginText}>Masz już konto?</Text>
+                <Button
+                  mode="text"
+                  onPress={() => navigation.navigate('Login')}
+                  style={styles.loginButton}
+                  labelStyle={styles.loginButtonText}
+                >
+                  Zaloguj się
+                </Button>
+              </View>
+            </View>
+          </Surface>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f6f6f6',
+    backgroundColor: '#121212',
   },
-  scrollContent: {
+  scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
   },
-  surfaceContainer: {
+  surface: {
+    flex: 1,
     padding: 20,
-    borderRadius: 10,
-    elevation: 4,
+    backgroundColor: '#121212',
+    elevation: 0,
+  },
+  header: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 30,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#AAAAAA',
     textAlign: 'center',
   },
-  profileImageContainer: {
-    alignItems: 'center',
+  inputContainer: {
     marginBottom: 20,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  placeholderImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#e1e1e1',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    color: '#888',
-  },
-  formContainer: {
-    width: '100%',
   },
   input: {
-    marginBottom: 16,
-  },
-  button: {
-    marginTop: 10,
-    paddingVertical: 8,
+    marginBottom: 8,
+    backgroundColor: '#1E1E1E',
   },
   errorText: {
-    color: 'red',
+    color: '#FF4D4D',
     marginBottom: 10,
-    textAlign: 'center',
+    marginLeft: 10,
+    fontSize: 12,
+  },
+  buttonContainer: {
+    alignItems: 'center',
+  },
+  gradientButton: {
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    elevation: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  registerButton: {
+    width: '100%',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   loginContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 10,
+    marginBottom: 20,
   },
   loginText: {
-    color: '#6200ee',
-    fontWeight: 'bold',
+    color: '#AAAAAA',
+  },
+  loginButton: {
+    marginLeft: 5,
+  },
+  loginButtonText: {
+    color: '#C77DFF',
   },
 });
 
