@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Dostępność i Pomysły",
+    "slug": "availability-and-ideas",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Zezwól aplikacji na dostęp do kamery, aby robić zdjęcia z wydarzeń."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Zezwól aplikacji na dostęp do zdjęć, aby dzielić się fotkami z wydarzeń."
+        }
+      ]
+    ]
+  }
+} 
