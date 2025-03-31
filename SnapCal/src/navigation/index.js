@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
 // Screens
@@ -9,7 +9,7 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import HomeScreen from '../screens/main/HomeScreen';
 import CalendarScreen from '../screens/main/CalendarScreen';
-import GroupsScreen from '../screens/groups/GroupsScreen';
+import GroupsScreen from '../screens/main/GroupsScreen';
 import CreateGroupScreen from '../screens/groups/CreateGroupScreen';
 import GroupDetailScreen from '../screens/groups/GroupDetailScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
@@ -21,8 +21,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
-const AuthStack = createStackNavigator();
+const Stack = createNativeStackNavigator();
+const AuthStack = createNativeStackNavigator();
 
 // Auth navigator
 const AuthNavigator = () => (

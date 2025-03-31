@@ -15,6 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import Logo from '../../components/Logo';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -190,10 +191,7 @@ const LoginScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('../../../assets/logo.png')} 
-            style={styles.logo} 
-          />
+          <Logo size="large" showText={false} />
           <Text style={styles.title}>Welcome to SnapCal</Text>
           <Text style={styles.subtitle}>Sign in to continue</Text>
         </View>
