@@ -10,7 +10,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert
+  StatusBar
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -20,34 +20,42 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { USE_MOCK_FIREBASE } from '../../services/firebaseConfig';
 
 const CreateGroupScreen = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [groupPhoto, setGroupPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   const { user } = useAuth();
   const { theme } = useTheme();
   const navigation = useNavigation();
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please grant permission to access your photos.');
-      return;
-    }
-    
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    
-    if (!result.canceled) {
-      setGroupPhoto(result.assets[0].uri);
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        setError('Potrzebujemy dostępu do Twoich zdjęć. Sprawdź ustawienia aplikacji.');
+        return;
+      }
+      
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      
+      if (!result.canceled) {
+        setGroupPhoto(result.assets[0].uri);
+        setError(null);
+      }
+    } catch (err) {
+      console.error('Error picking image:', err);
+      setError('Nie można wybrać zdjęcia. Spróbuj ponownie później.');
     }
   };
 
@@ -55,6 +63,11 @@ const CreateGroupScreen = () => {
     if (!groupPhoto) return null;
     
     try {
+      if (USE_MOCK_FIREBASE) {
+        // In demo mode, just return a placeholder URL
+        return 'https://via.placeholder.com/400x400';
+      }
+      
       const response = await fetch(groupPhoto);
       const blob = await response.blob();
       
@@ -64,33 +77,62 @@ const CreateGroupScreen = () => {
       return await getDownloadURL(fileRef);
     } catch (error) {
       console.error('Error uploading group photo:', error);
-      return null;
+      throw new Error('Nie można przesłać zdjęcia grupy.');
     }
   };
 
   const createGroup = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Please enter a group name.');
+      setError('Nazwa grupy jest wymagana.');
       return;
     }
     
     try {
       setLoading(true);
-      
-      // Upload group photo if selected
-      const photoURL = await uploadGroupPhoto();
+      setError(null);
       
       // Generate a new group ID
-      const groupId = doc(collection(firestore, 'groups')).id;
+      const groupId = USE_MOCK_FIREBASE 
+        ? `group-${Date.now()}` 
+        : doc(collection(firestore, 'groups')).id;
       
-      // Create the group document
+      // Upload group photo if selected
+      let photoURL;
+      try {
+        photoURL = await uploadGroupPhoto();
+      } catch (err) {
+        // If photo upload fails but we have a name, we can still create the group
+        console.warn('Photo upload failed but continuing with group creation');
+      }
+      
+      if (USE_MOCK_FIREBASE) {
+        // In demo mode, simply navigate to the groups list after simulating creation
+        setTimeout(() => {
+          navigation.navigate('Groups', {
+            newGroupCreated: true,
+            groupInfo: {
+              id: groupId,
+              name: name.trim(),
+              description: description.trim(),
+              photoURL: photoURL || null,
+              memberCount: 1,
+              isAdmin: true
+            }
+          });
+          setLoading(false);
+        }, 1000);
+        return;
+      }
+      
+      // Create the group document in Firestore
       await setDoc(doc(firestore, 'groups', groupId), {
         id: groupId,
         name: name.trim(),
         description: description.trim(),
         photoURL,
         createdAt: new Date().toISOString(),
-        createdBy: user.uid
+        createdBy: user.uid,
+        memberCount: 1
       });
       
       // Add current user as admin
@@ -113,7 +155,7 @@ const CreateGroupScreen = () => {
       });
     } catch (error) {
       console.error('Error creating group:', error);
-      Alert.alert('Error', 'Failed to create group. Please try again.');
+      setError(error.message || 'Nie można utworzyć grupy. Spróbuj ponownie później.');
     } finally {
       setLoading(false);
     }
@@ -123,6 +165,7 @@ const CreateGroupScreen = () => {
     container: {
       flex: 1,
       backgroundColor: theme.background,
+      paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight,
     },
     content: {
       flex: 1,
@@ -132,18 +175,19 @@ const CreateGroupScreen = () => {
       marginBottom: 24,
     },
     title: {
-      fontSize: 24,
+      fontSize: 28,
       fontWeight: 'bold',
       color: theme.text,
-      marginBottom: 8,
+      marginBottom: 12,
     },
     subtitle: {
       fontSize: 16,
-      color: theme.inactive,
+      color: theme.secondaryText,
+      lineHeight: 22,
     },
     photoContainer: {
       alignItems: 'center',
-      marginVertical: 20,
+      marginVertical: 24,
     },
     photoPlaceholder: {
       width: 120,
@@ -162,8 +206,9 @@ const CreateGroupScreen = () => {
       borderRadius: 60,
     },
     photoButtonText: {
-      color: theme.primary,
+      color: theme.accent,
       fontWeight: '500',
+      marginTop: 8,
     },
     inputContainer: {
       marginBottom: 20,
@@ -172,6 +217,7 @@ const CreateGroupScreen = () => {
       fontSize: 16,
       marginBottom: 8,
       color: theme.text,
+      fontWeight: '500',
     },
     input: {
       backgroundColor: theme.card,
@@ -187,7 +233,7 @@ const CreateGroupScreen = () => {
       textAlignVertical: 'top',
     },
     createButton: {
-      backgroundColor: theme.primary,
+      backgroundColor: theme.accent,
       paddingVertical: 15,
       borderRadius: 8,
       alignItems: 'center',
@@ -200,6 +246,18 @@ const CreateGroupScreen = () => {
     },
     disabledButton: {
       backgroundColor: theme.inactive,
+    },
+    errorContainer: {
+      marginTop: 20,
+      padding: 10,
+      backgroundColor: 'rgba(255, 69, 58, 0.1)',
+      borderRadius: 8,
+      marginHorizontal: 0,
+    },
+    errorText: {
+      color: theme.error,
+      fontSize: 14,
+      textAlign: 'center',
     }
   });
 
@@ -208,10 +266,11 @@ const CreateGroupScreen = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <StatusBar barStyle="light-content" />
       <ScrollView style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Create New Group</Text>
-          <Text style={styles.subtitle}>Create a private group to share photos with friends</Text>
+          <Text style={styles.title}>Nowa grupa</Text>
+          <Text style={styles.subtitle}>Utwórz prywatną grupę, aby dzielić się zdjęciami ze znajomymi</Text>
         </View>
         
         <View style={styles.photoContainer}>
@@ -226,27 +285,30 @@ const CreateGroupScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity onPress={pickImage}>
             <Text style={styles.photoButtonText}>
-              {groupPhoto ? 'Change Photo' : 'Add Group Photo'}
+              {groupPhoto ? 'Zmień zdjęcie' : 'Dodaj zdjęcie grupy'}
             </Text>
           </TouchableOpacity>
         </View>
         
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Group Name*</Text>
+          <Text style={styles.label}>Nazwa grupy*</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter group name"
+            placeholder="Wpisz nazwę grupy"
             placeholderTextColor={theme.inactive}
             value={name}
-            onChangeText={setName}
+            onChangeText={(text) => {
+              setName(text);
+              if (error && text.trim()) setError(null);
+            }}
           />
         </View>
         
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Description (Optional)</Text>
+          <Text style={styles.label}>Opis (opcjonalnie)</Text>
           <TextInput
             style={[styles.input, styles.descriptionInput]}
-            placeholder="Enter group description"
+            placeholder="Wpisz opis grupy"
             placeholderTextColor={theme.inactive}
             value={description}
             onChangeText={setDescription}
@@ -254,18 +316,24 @@ const CreateGroupScreen = () => {
           />
         </View>
         
-        <TouchableOpacity 
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+        
+        <TouchableOpacity
           style={[
             styles.createButton,
-            !name.trim() || loading ? styles.disabledButton : null
+            (loading || !name.trim()) && styles.disabledButton
           ]}
           onPress={createGroup}
-          disabled={!name.trim() || loading}
+          disabled={loading || !name.trim()}
         >
           {loading ? (
-            <ActivityIndicator color="white" />
+            <ActivityIndicator color="white" size="small" />
           ) : (
-            <Text style={styles.createButtonText}>Create Group</Text>
+            <Text style={styles.createButtonText}>Utwórz grupę</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

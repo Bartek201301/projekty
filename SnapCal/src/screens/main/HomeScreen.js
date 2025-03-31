@@ -7,7 +7,9 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   RefreshControl,
-  ActivityIndicator
+  ActivityIndicator,
+  StatusBar,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -21,6 +23,7 @@ const HomeScreen = () => {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const { user } = useAuth();
   const { theme } = useTheme();
   const navigation = useNavigation();
@@ -28,6 +31,7 @@ const HomeScreen = () => {
   const fetchRecentPhotos = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // First get user's groups
       const groupsQuery = query(
@@ -45,52 +49,68 @@ const HomeScreen = () => {
       }
       
       // Then get recent photos from those groups
-      const photosQuery = query(
-        collection(firestore, 'photos'),
-        where('groupId', 'in', userGroups),
-        orderBy('createdAt', 'desc'),
-        limit(20)
-      );
+      // Due to Firestore limitations, we can only query 'in' with max 10 values
+      // So we need to batch our queries if we have more than 10 groups
+      let allPhotos = [];
       
-      const photosSnapshot = await getDocs(photosQuery);
+      // Split groups into batches of 10
+      for (let i = 0; i < userGroups.length; i += 10) {
+        const groupBatch = userGroups.slice(i, i + 10);
+        
+        const photosQuery = query(
+          collection(firestore, 'photos'),
+          where('groupId', 'in', groupBatch),
+          orderBy('createdAt', 'desc'),
+          limit(20)
+        );
+        
+        const photosSnapshot = await getDocs(photosQuery);
+        
+        const photosBatch = await Promise.all(photosSnapshot.docs.map(async (doc) => {
+          const photoData = doc.data();
+          
+          // Get user info
+          const userDoc = await getDocs(query(
+            collection(firestore, 'users'),
+            where('uid', '==', photoData.userId)
+          ));
+          
+          const userData = userDoc.docs[0]?.data() || {};
+          
+          // Get group info
+          const groupDoc = await getDocs(query(
+            collection(firestore, 'groups'),
+            where('id', '==', photoData.groupId)
+          ));
+          
+          const groupData = groupDoc.docs[0]?.data() || {};
+          
+          return {
+            id: doc.id,
+            ...photoData,
+            user: {
+              id: photoData.userId,
+              name: userData.displayName || 'Nieznany użytkownik',
+              photoURL: userData.photoURL
+            },
+            group: {
+              id: photoData.groupId,
+              name: groupData.name || 'Nieznana grupa'
+            }
+          };
+        }));
+        
+        allPhotos = [...allPhotos, ...photosBatch];
+      }
       
-      const photosList = await Promise.all(photosSnapshot.docs.map(async (doc) => {
-        const photoData = doc.data();
-        
-        // Get user info
-        const userDoc = await getDocs(query(
-          collection(firestore, 'users'),
-          where('uid', '==', photoData.userId)
-        ));
-        
-        const userData = userDoc.docs[0]?.data() || {};
-        
-        // Get group info
-        const groupDoc = await getDocs(query(
-          collection(firestore, 'groups'),
-          where('id', '==', photoData.groupId)
-        ));
-        
-        const groupData = groupDoc.docs[0]?.data() || {};
-        
-        return {
-          id: doc.id,
-          ...photoData,
-          user: {
-            id: photoData.userId,
-            name: userData.displayName || 'Unknown User',
-            photoURL: userData.photoURL
-          },
-          group: {
-            id: photoData.groupId,
-            name: groupData.name || 'Unknown Group'
-          }
-        };
-      }));
+      // Sort all photos by date
+      allPhotos.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
-      setPhotos(photosList);
+      // Take only top 20
+      setPhotos(allPhotos.slice(0, 20));
     } catch (error) {
       console.error('Error fetching photos:', error);
+      setError('Nie można załadować zdjęć. Spróbuj ponownie później.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -117,24 +137,24 @@ const HomeScreen = () => {
     container: {
       flex: 1,
       backgroundColor: theme.background,
+      paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight,
     },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 16,
     },
     headerTitle: {
-      fontSize: 22,
+      fontSize: 28,
       fontWeight: 'bold',
       color: theme.text,
     },
-    cameraButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: theme.primary,
+    actionButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -144,27 +164,53 @@ const HomeScreen = () => {
       justifyContent: 'center',
       padding: 20,
     },
+    emptyIcon: {
+      marginBottom: 16,
+    },
     emptyText: {
       fontSize: 16,
-      color: theme.inactive,
+      color: theme.secondaryText,
       textAlign: 'center',
-      marginTop: 10,
+      marginBottom: 20,
     },
     createGroupButton: {
-      backgroundColor: theme.primary,
+      backgroundColor: theme.accent,
       paddingVertical: 12,
       paddingHorizontal: 20,
       borderRadius: 8,
-      marginTop: 20,
+      marginTop: 10,
     },
     createGroupButtonText: {
       color: 'white',
       fontWeight: 'bold',
     },
+    errorContainer: {
+      padding: 20,
+      alignItems: 'center',
+    },
+    errorText: {
+      color: theme.error,
+      textAlign: 'center',
+      marginBottom: 15,
+    },
+    retryButton: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      backgroundColor: theme.accent,
+      borderRadius: 6,
+    },
+    retryButtonText: {
+      color: 'white',
+      fontWeight: '600',
+    },
     loader: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    photoList: {
+      paddingHorizontal: 16,
+      paddingBottom: 20
     }
   });
 
@@ -178,43 +224,59 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Home</Text>
+        <Text style={styles.headerTitle}>SnapCal</Text>
         <TouchableOpacity 
-          style={styles.cameraButton}
+          style={styles.actionButton}
           onPress={() => navigation.navigate('Camera')}
         >
-          <Ionicons name="camera" size={22} color="white" />
+          <Ionicons name="camera" size={24} color={theme.text} />
         </TouchableOpacity>
       </View>
       
-      {photos.length > 0 ? (
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={fetchRecentPhotos}
+          >
+            <Text style={styles.retryButtonText}>Spróbuj ponownie</Text>
+          </TouchableOpacity>
+        </View>
+      ) : photos.length > 0 ? (
         <FlatList
           data={photos}
           renderItem={renderItem}
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
+          contentContainerStyle={styles.photoList}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[theme.primary]}
-              tintColor={theme.primary}
+              tintColor={theme.text}
             />
           }
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Ionicons name="images-outline" size={60} color={theme.inactive} />
+          <Ionicons 
+            name="images-outline" 
+            size={60} 
+            color={theme.inactive}
+            style={styles.emptyIcon}
+          />
           <Text style={styles.emptyText}>
-            No photos yet. Join or create a group to start sharing photos!
+            Nie masz jeszcze zdjęć. Dołącz do grupy lub utwórz nową, aby zacząć dzielić się zdjęciami!
           </Text>
           <TouchableOpacity 
             style={styles.createGroupButton}
             onPress={() => navigation.navigate('CreateGroup')}
           >
-            <Text style={styles.createGroupButtonText}>Create New Group</Text>
+            <Text style={styles.createGroupButtonText}>Utwórz nową grupę</Text>
           </TouchableOpacity>
         </View>
       )}

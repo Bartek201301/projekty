@@ -12,6 +12,17 @@ A mobile app for managing group photo galleries with calendar integration, built
 - **Permissions**: Admin controls for managing groups and members
 - **Dark/Light Mode**: Support for system theme preference
 
+## Interface & Design
+
+SnapCal features a modern, minimalist design inspired by popular photo-sharing apps:
+
+- **Dark Theme**: Sleek dark interface optimized for photo viewing
+- **Calendar Integration**: Calendar view with photo thumbnails on dates
+- **Group-Focused Navigation**: Easy navigation between groups and their contents
+- **Thumbnail Grid**: Elegant grid layout for browsing photos
+- **Responsive Design**: Optimized for various device sizes and orientations
+- **Polish Language Support**: Interface in Polish (with English documentation)
+
 ## Technologies
 
 - React Native (Expo)
@@ -50,9 +61,18 @@ The app includes a demo mode that uses mock data instead of a real Firebase back
 
 1. Make sure demo mode is enabled in `src/services/firebaseConfig.js` (set `USE_MOCK_FIREBASE = true`)
 2. Start the development server: `expo start`
-3. Run the app on a device or emulator
+3. Run the app on a device or emulator by pressing 'a' for Android or 'i' for iOS
 
-For more information about demo mode, see [DEMO_MODE.md](DEMO_MODE.md).
+#### Using Demo Mode
+
+In demo mode, you can:
+- Browse pre-loaded groups and photos
+- Create new groups (they will persist during your session)
+- Navigate between screens and view photos
+- Test the calendar functionality with mock data
+- Experience the complete UI without needing Firebase setup
+
+When using the demo mode, any data you create will exist only in memory and will reset when the app is restarted.
 
 ### Production Setup
 
@@ -91,7 +111,7 @@ SnapCal/
 │   │   ├── main/         # Main app screens
 │   │   └── photos/       # Photo-related screens
 │   ├── services/         # API and service integrations
-│   └── utils/            # Utility functions
+│   └── utils/            # Utility functions and error messages
 ├── App.js                # App entry point
 ├── app.json              # Expo configuration
 └── package.json          # Dependencies
@@ -105,6 +125,15 @@ SnapCal/
 - **groups**: Group information
 - **group_members**: Mapping between users and groups with roles
 - **photos**: Photos with metadata (user, group, date, etc.)
+
+## Troubleshooting
+
+If you encounter any issues:
+
+1. **Navigation Errors**: Make sure you're using compatible versions of React Navigation packages
+2. **Firebase Errors**: Check that your Firebase configuration is correct or use demo mode
+3. **Build Errors**: Run `expo doctor` to identify and fix common setup issues
+4. **White Screen**: Check console for errors and verify that you have the correct dependencies
 
 ## License
 

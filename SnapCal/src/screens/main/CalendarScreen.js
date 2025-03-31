@@ -8,8 +8,9 @@ import {
   ActivityIndicator,
   Dimensions,
   RefreshControl,
-  Alert,
   Image,
+  StatusBar,
+  Platform,
   ScrollView
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
@@ -31,6 +32,7 @@ const CalendarScreen = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [groups, setGroups] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   
   const { user } = useAuth();
   const { theme } = useTheme();
@@ -67,6 +69,7 @@ const CalendarScreen = () => {
   const fetchUserGroups = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Fetch user's groups
       const groupMembersQuery = query(
@@ -116,7 +119,7 @@ const CalendarScreen = () => {
       setGroups(allGroups);
     } catch (error) {
       console.error('Error fetching user groups:', error);
-      Alert.alert('Error', 'Failed to load groups. Please try again.');
+      setError('Nie można załadować grup. Spróbuj ponownie później.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -126,6 +129,7 @@ const CalendarScreen = () => {
   const fetchPhotos = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Fetch photos for the selected group
       const photosQuery = query(
@@ -153,7 +157,7 @@ const CalendarScreen = () => {
           ...photoData,
           user: {
             id: photoData.userId,
-            name: userData.displayName || 'Unknown User',
+            name: userData.displayName || 'Nieznany użytkownik',
             photoURL: userData.photoURL
           },
           group: {
@@ -170,12 +174,17 @@ const CalendarScreen = () => {
       photosList.forEach(photo => {
         const dateStr = new Date(photo.date).toISOString().split('T')[0];
         if (dates[dateStr]) {
-          dates[dateStr].dots.push({ color: theme.primary });
+          // If we already have a photo for this date, increase count
+          dates[dateStr].dots = [{ color: theme.primary }];
+          if (!dates[dateStr].imageUrl) {
+            dates[dateStr].imageUrl = photo.imageUrl;
+          }
         } else {
           dates[dateStr] = {
             dots: [{ color: theme.primary }],
             selected: dateStr === selectedDate,
-            selectedColor: theme.primary + '40'
+            selectedColor: theme.accent + '30',
+            imageUrl: photo.imageUrl
           };
         }
       });
@@ -183,13 +192,13 @@ const CalendarScreen = () => {
       dates[selectedDate] = {
         ...(dates[selectedDate] || {}),
         selected: true,
-        selectedColor: theme.primary + '40'
+        selectedColor: theme.accent + '30'
       };
       
       setMarkedDates(dates);
     } catch (error) {
       console.error('Error fetching photos:', error);
-      Alert.alert('Error', 'Failed to load photos. Please try again.');
+      setError('Nie można załadować zdjęć. Spróbuj ponownie później.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -215,7 +224,7 @@ const CalendarScreen = () => {
       [dateStr]: {
         ...(prevMarked[dateStr] || {}),
         selected: true,
-        selectedColor: theme.primary + '40'
+        selectedColor: theme.accent + '30'
       }
     }));
   };
@@ -227,6 +236,28 @@ const CalendarScreen = () => {
     });
   };
 
+  // Custom day component to display photo thumbnails on calendar
+  const renderDay = (day, item) => {
+    if (!item || !day.dateString) {
+      return (<View style={styles.emptyDay}></View>);
+    }
+
+    const isPastDate = new Date(day.dateString) <= new Date();
+    const hasImage = item.imageUrl ? true : false;
+
+    return (
+      <View style={styles.dayContainer}>
+        <Text style={styles.dayText}>{day.day}</Text>
+        {hasImage && isPastDate && (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.dayImage}
+          />
+        )}
+      </View>
+    );
+  };
+
   const renderPhotoItem = ({ item }) => (
     <TouchableOpacity 
       style={styles.photoItem}
@@ -235,6 +266,7 @@ const CalendarScreen = () => {
       <Image 
         source={{ uri: item.imageUrl }} 
         style={styles.photoImage}
+        resizeMode="cover"
       />
     </TouchableOpacity>
   );
@@ -243,179 +275,157 @@ const CalendarScreen = () => {
     container: {
       flex: 1,
       backgroundColor: theme.background,
+      paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight,
     },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 16,
     },
     headerTitle: {
-      fontSize: 22,
+      fontSize: 28,
       fontWeight: 'bold',
       color: theme.text,
     },
-    cameraButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: theme.primary,
+    addButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    groupsContainer: {
-      paddingHorizontal: 10,
-      paddingVertical: 8,
+    calendarContainer: {
+      backgroundColor: theme.background,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
+      paddingBottom: 10,
+    },
+    error: {
+      textAlign: 'center',
+      padding: 20,
+      color: theme.error,
+    },
+    groupSelector: {
+      marginBottom: 15,
+    },
+    groupSelectorText: {
+      fontSize: 16,
+      color: theme.secondaryText,
+      marginLeft: 16,
+      marginBottom: 8,
+    },
+    groupsContainer: {
+      paddingHorizontal: 12,
     },
     groupList: {
-      paddingVertical: 8,
+      flexDirection: 'row',
     },
     groupItem: {
-      backgroundColor: theme.card,
-      borderRadius: 20,
-      paddingHorizontal: 14,
+      marginHorizontal: 4,
       paddingVertical: 8,
-      marginHorizontal: 6,
+      paddingHorizontal: 16,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: theme.border,
+      backgroundColor: theme.card,
     },
     groupItemSelected: {
-      backgroundColor: theme.primary + '20',
-      borderColor: theme.primary,
+      backgroundColor: theme.accent,
+      borderColor: theme.accent,
     },
     groupText: {
       color: theme.text,
       fontWeight: '500',
     },
     groupTextSelected: {
-      color: theme.primary,
+      color: '#FFFFFF',
       fontWeight: 'bold',
-    },
-    calendarContainer: {
-      marginHorizontal: 16,
-      marginBottom: 16,
-      borderRadius: 12,
-      overflow: 'hidden',
-      backgroundColor: theme.card,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 2,
     },
     photosContainer: {
       flex: 1,
-      paddingHorizontal: 16,
+      padding: 8,
     },
-    dateHeader: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.text,
-      marginBottom: 12,
+    photoListContainer: {
+      padding: 2,
     },
-    noPhotosContainer: {
+    photoItem: {
+      width: (width - 32) / 2,
+      height: (width - 32) / 2,
+      margin: 4,
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
+    photoImage: {
+      width: '100%',
+      height: '100%',
+    },
+    emptyContainer: {
       flex: 1,
-      alignItems: 'center',
       justifyContent: 'center',
+      alignItems: 'center',
       padding: 20,
     },
-    noPhotosText: {
+    emptyText: {
       fontSize: 16,
-      color: theme.inactive,
+      color: theme.secondaryText,
       textAlign: 'center',
-      marginTop: 10,
-    },
-    addPhotoButton: {
-      backgroundColor: theme.primary,
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-      marginTop: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    addPhotoButtonText: {
-      color: 'white',
-      fontWeight: 'bold',
-      marginLeft: 8,
+      marginBottom: 20,
     },
     loader: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
     },
-    scrollViewContent: {
-      paddingBottom: 20,
-    },
-    noGroupsContainer: {
-      flex: 1,
-      alignItems: 'center',
+    dayContainer: {
+      width: 46,
+      height: 46,
       justifyContent: 'center',
-      padding: 20,
+      alignItems: 'center',
     },
-    noGroupsText: {
+    dayText: {
+      color: theme.text,
       fontSize: 16,
-      color: theme.inactive,
-      textAlign: 'center',
-      marginTop: 10,
+      position: 'absolute',
+      zIndex: 10,
     },
-    createGroupButton: {
-      backgroundColor: theme.primary,
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-      marginTop: 20,
+    dayImage: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      opacity: 0.7,
     },
-    createGroupButtonText: {
-      color: 'white',
-      fontWeight: 'bold',
+    emptyDay: {
+      width: 46,
+      height: 46,
     },
-    photoItem: {
+    dateTextContainer: {
+      alignItems: 'center',
+      marginVertical: 15,
+    },
+    dateText: {
+      fontSize: 16,
+      color: theme.text,
+      fontWeight: '500',
+    },
+    largePhotoContainer: {
+      marginBottom: 15,
+    },
+    largePhoto: {
+      width: width - 32,
+      height: (width - 32) * 1.2,
       borderRadius: 12,
-      margin: 4,
-      overflow: 'hidden',
-      backgroundColor: theme.border,
-    },
-    photoImage: {
-      width: (width - 48) / 2, // 2 columns with padding
-      height: (width - 48) / 2,
-      resizeMode: 'cover',
+      marginHorizontal: 16,
     },
   });
 
-  // Theme for calendar
-  const calendarTheme = {
-    backgroundColor: theme.card,
-    calendarBackground: theme.card,
-    textSectionTitleColor: theme.text,
-    selectedDayBackgroundColor: theme.primary,
-    selectedDayTextColor: '#ffffff',
-    todayTextColor: theme.primary,
-    dayTextColor: theme.text,
-    textDisabledColor: theme.inactive,
-    dotColor: theme.primary,
-    selectedDotColor: '#ffffff',
-    arrowColor: theme.primary,
-    monthTextColor: theme.text,
-    indicatorColor: theme.primary,
-    textDayFontWeight: '300',
-    textMonthFontWeight: 'bold',
-    textDayHeaderFontWeight: '500',
-    textDayFontSize: 14,
-    textMonthFontSize: 16,
-    textDayHeaderFontSize: 14
+  // Function to format the date for display
+  const formatDate = (dateString) => {
+    const options = { month: 'long', year: 'numeric' };
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pl-PL', options);
   };
-
-  // Format date as readable string
-  const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
 
   if (loading && !refreshing) {
     return (
@@ -425,118 +435,132 @@ const CalendarScreen = () => {
     );
   }
 
-  if (groups.length === 0) {
-    return (
-      <View style={[styles.container, styles.noGroupsContainer]}>
-        <Ionicons name="calendar" size={60} color={theme.inactive} />
-        <Text style={styles.noGroupsText}>
-          You haven't joined any groups yet. Create or join a group to see photos in the calendar.
-        </Text>
-        <TouchableOpacity 
-          style={styles.createGroupButton}
-          onPress={() => navigation.navigate('CreateGroup')}
-        >
-          <Text style={styles.createGroupButtonText}>Create Group</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const photosForDate = getPhotosForSelectedDate();
+  const selectedPhotos = getPhotosForSelectedDate();
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Header with Group Name */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Calendar</Text>
+        <Text style={styles.headerTitle}>
+          {selectedGroup?.name || 'Kalendarz'}
+        </Text>
         <TouchableOpacity 
-          style={styles.cameraButton}
-          onPress={() => navigation.navigate('Camera', { groupId: selectedGroup?.id })}
+          style={styles.addButton}
+          onPress={() => navigation.navigate('CreateGroup')}
         >
-          <Ionicons name="camera" size={22} color="white" />
+          <Ionicons name="add" size={28} color={theme.text} />
         </TouchableOpacity>
       </View>
-
-      {/* Group selector */}
-      <View style={styles.groupsContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.groupList}
-        >
-          {groups.map(group => (
-            <TouchableOpacity
-              key={group.id}
-              style={[
-                styles.groupItem,
-                selectedGroup?.id === group.id && styles.groupItemSelected
-              ]}
-              onPress={() => setSelectedGroup(group)}
-            >
-              <Text
-                style={[
-                  styles.groupText,
-                  selectedGroup?.id === group.id && styles.groupTextSelected
-                ]}
-              >
-                {group.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Calendar */}
-      <View style={styles.calendarContainer}>
-        <Calendar
-          current={selectedDate}
-          onDayPress={handleDateSelect}
-          markingType='multi-dot'
-          markedDates={markedDates}
-          theme={calendarTheme}
-          enableSwipeMonths={true}
-        />
-      </View>
-
-      {/* Selected date info */}
-      <View style={styles.dateInfoContainer}>
-        <Text style={styles.dateInfoText}>{formattedDate}</Text>
-      </View>
       
-      {/* Photos for selected date */}
-      <View style={styles.photosContainer}>
-        {photosForDate.length > 0 ? (
-          <FlatList
-            data={photosForDate}
-            renderItem={renderPhotoItem}
-            keyExtractor={item => item.id}
-            numColumns={2}
-            contentContainerStyle={styles.scrollViewContent}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[theme.primary]}
-                tintColor={theme.primary}
-              />
-            }
-          />
-        ) : (
-          <View style={styles.noPhotosContainer}>
-            <Ionicons name="images-outline" size={60} color={theme.inactive} />
-            <Text style={styles.noPhotosText}>
-              No photos for this date. Take a photo to add to this day!
-            </Text>
-            <TouchableOpacity 
-              style={styles.addPhotoButton}
-              onPress={() => navigation.navigate('Camera', { groupId: selectedGroup.id })}
-            >
-              <Ionicons name="camera" size={20} color="white" />
-              <Text style={styles.addPhotoButtonText}>Take Photo</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+      {error ? (
+        <Text style={styles.error}>{error}</Text>
+      ) : (
+        <FlatList
+          data={selectedPhotos}
+          renderItem={renderPhotoItem}
+          keyExtractor={item => item.id}
+          numColumns={2}
+          contentContainerStyle={styles.photoListContainer}
+          columnWrapperStyle={{ justifyContent: 'flex-start' }}
+          ListHeaderComponent={
+            <>
+              {/* Calendar */}
+              <View style={styles.calendarContainer}>
+                <Calendar
+                  current={selectedDate}
+                  onDayPress={handleDateSelect}
+                  markedDates={markedDates}
+                  markingType={'custom'}
+                  dayComponent={({date, state, marking}) => 
+                    renderDay(date, marking)
+                  }
+                  theme={{
+                    calendarBackground: theme.background,
+                    textSectionTitleColor: theme.secondaryText,
+                    monthTextColor: theme.text,
+                    textMonthFontWeight: 'bold',
+                    textMonthFontSize: 18,
+                    textDayHeaderFontSize: 13,
+                    textDayHeaderFontWeight: '600',
+                    arrowColor: theme.text,
+                  }}
+                />
+              </View>
+              
+              {/* Group Selector */}
+              <View style={styles.groupSelector}>
+                <Text style={styles.groupSelectorText}>Moje grupy:</Text>
+                <View style={styles.groupsContainer}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.groupList}
+                  >
+                    {groups.map(group => (
+                      <TouchableOpacity
+                        key={group.id}
+                        style={[
+                          styles.groupItem,
+                          selectedGroup?.id === group.id && styles.groupItemSelected
+                        ]}
+                        onPress={() => setSelectedGroup(group)}
+                      >
+                        <Text 
+                          style={[
+                            styles.groupText,
+                            selectedGroup?.id === group.id && styles.groupTextSelected
+                          ]}
+                        >
+                          {group.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+              
+              {/* Selected Date Display */}
+              <View style={styles.dateTextContainer}>
+                <Text style={styles.dateText}>
+                  {formatDate(selectedDate)}
+                </Text>
+              </View>
+              
+              {/* Large Photos Display */}
+              {selectedPhotos.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    Brak zdjęć dla wybranej daty.
+                  </Text>
+                </View>
+              ) : null}
+            </>
+          }
+          ListEmptyComponent={
+            !loading && (
+              <View style={styles.emptyContainer}>
+                <Ionicons 
+                  name="images-outline" 
+                  size={60} 
+                  color={theme.inactive} 
+                />
+                <Text style={styles.emptyText}>
+                  Brak zdjęć dla wybranej daty.
+                </Text>
+              </View>
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.text}
+            />
+          }
+        />
+      )}
     </View>
   );
 };
