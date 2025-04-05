@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zaloguj się - TimeManager</title>
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-card">
+            <button class="auth-close"><i class='bx bx-x'></i></button>
+            <h1 class="auth-title">Logowanie</h1>
+            
+            <form>
+                <div class="auth-field">
+                    <label for="email">Email</label>
+                    <div class="auth-input-container">
+                        <i class='bx bx-envelope'></i>
+                        <input type="email" id="email" class="auth-input" placeholder="Twój adres email" required>
+                    </div>
+                </div>
+                
+                <div class="auth-field">
+                    <label for="password">Hasło</label>
+                    <div class="auth-input-container">
+                        <i class='bx bx-lock-alt'></i>
+                        <input type="password" id="password" class="auth-input" placeholder="Twoje hasło" required>
+                    </div>
+                </div>
+                
+                <div class="auth-remember">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Zapamiętaj mnie</label>
+                    
+                    <a href="#" class="auth-forgot">Zapomniałeś hasła?</a>
+                </div>
+                
+                <button type="submit" class="auth-btn">Zaloguj się</button>
+            </form>
+            
+            <div class="auth-divider">lub</div>
+            
+            <button class="social-btn google">
+                <i class='bx bxl-google'></i>
+                Zaloguj przez Google
+            </button>
+            
+            <button class="social-btn facebook">
+                <i class='bx bxl-facebook-circle'></i>
+                Zaloguj przez Facebook
+            </button>
+            
+            <div class="auth-footer">
+                Nie masz jeszcze konta? <a href="register.html">Zarejestruj się</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html> 

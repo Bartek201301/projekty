@@ -21,119 +21,108 @@
 
     <!-- Modal logowania -->
     <div id="login-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Logowanie</h2>
-                <span class="close-modal" data-modal="login-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form class="auth-form">
-                    <div class="form-group">
-                        <label for="login-email">Email</label>
-                        <div class="input-icon-wrapper">
-                            <i class='bx bx-envelope'></i>
-                            <input type="email" id="login-email" placeholder="Twój adres email" required>
-                        </div>
+        <div class="modal-content auth-card">
+            <button class="auth-close close-modal" data-modal="login-modal"><i class='bx bx-x'></i></button>
+            <h1 class="auth-title">Logowanie</h1>
+            
+            <form>
+                <div class="auth-field">
+                    <label for="email">Email</label>
+                    <div class="auth-input-container">
+                        <i class='bx bx-envelope'></i>
+                        <input type="email" id="email" class="auth-input" placeholder="Twój adres email" required>
                     </div>
-                    <div class="form-group">
-                        <label for="login-password">Hasło</label>
-                        <div class="input-icon-wrapper">
-                            <i class='bx bx-lock-alt'></i>
-                            <input type="password" id="login-password" placeholder="Twoje hasło" required>
-                        </div>
+                </div>
+                
+                <div class="auth-field">
+                    <label for="password">Hasło</label>
+                    <div class="auth-input-container">
+                        <i class='bx bx-lock-alt'></i>
+                        <input type="password" id="password" class="auth-input" placeholder="Twoje hasło" required>
                     </div>
-                    <div class="form-options">
-                        <label class="checkbox-container">
-                            <input type="checkbox">
-                            <span class="checkmark"></span>
-                            Zapamiętaj mnie
-                        </label>
-                        <a href="#" class="forgot-password">Zapomniałeś hasła?</a>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-block">Zaloguj się</button>
-                </form>
-                <div class="auth-separator">
-                    <span>lub</span>
                 </div>
-                <div class="social-auth">
-                    <button class="btn btn-social btn-google">
-                        <i class='bx bxl-google'></i>
-                        Zaloguj przez Google
-                    </button>
-                    <button class="btn btn-social btn-facebook">
-                        <i class='bx bxl-facebook'></i>
-                        Zaloguj przez Facebook
-                    </button>
+                
+                <div class="auth-remember">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Zapamiętaj mnie</label>
+                    
+                    <a href="#" class="auth-forgot">Zapomniałeś hasła?</a>
                 </div>
-                <div class="auth-redirect">
-                    Nie masz jeszcze konta? <a href="#" class="switch-modal" data-target="register-modal">Zarejestruj się</a>
-                </div>
+                
+                <button type="submit" class="auth-btn">Zaloguj się</button>
+            </form>
+            
+            <div class="auth-divider">lub</div>
+            
+            <button class="social-btn google">
+                <i class='bx bxl-google'></i>
+                Zaloguj przez Google
+            </button>
+            
+            <button class="social-btn facebook">
+                <i class='bx bxl-facebook-circle'></i>
+                Zaloguj przez Facebook
+            </button>
+            
+            <div class="auth-footer">
+                Nie masz jeszcze konta? <a href="#" class="switch-modal" data-target="register-modal">Zarejestruj się</a>
             </div>
         </div>
     </div>
 
     <!-- Modal rejestracji -->
     <div id="register-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Rejestracja</h2>
-                <span class="close-modal" data-modal="register-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form class="auth-form">
-                    <div class="form-group">
-                        <label for="register-name">Imię i nazwisko</label>
-                        <div class="input-icon-wrapper">
-                            <i class='bx bx-user'></i>
-                            <input type="text" id="register-name" placeholder="Twoje imię i nazwisko" required>
-                        </div>
+        <div class="modal-content auth-card">
+            <button class="auth-close close-modal" data-modal="register-modal"><i class='bx bx-x'></i></button>
+            <h1 class="auth-title">Rejestracja</h1>
+            
+            <form>
+                <div class="auth-field">
+                    <label for="fullname">Imię i nazwisko</label>
+                    <div class="auth-input-container">
+                        <i class='bx bx-user'></i>
+                        <input type="text" id="fullname" class="auth-input" placeholder="Twoje imię i nazwisko" required>
                     </div>
-                    <div class="form-group">
-                        <label for="register-email">Email</label>
-                        <div class="input-icon-wrapper">
-                            <i class='bx bx-envelope'></i>
-                            <input type="email" id="register-email" placeholder="Twój adres email" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="register-password">Hasło</label>
-                        <div class="input-icon-wrapper">
-                            <i class='bx bx-lock-alt'></i>
-                            <input type="password" id="register-password" placeholder="Minimum 8 znaków" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="register-confirm">Potwierdź hasło</label>
-                        <div class="input-icon-wrapper">
-                            <i class='bx bx-lock-alt'></i>
-                            <input type="password" id="register-confirm" placeholder="Potwierdź hasło" required>
-                        </div>
-                    </div>
-                    <div class="form-options">
-                        <label class="checkbox-container">
-                            <input type="checkbox" required>
-                            <span class="checkmark"></span>
-                            Akceptuję <a href="#">regulamin</a> i <a href="#">politykę prywatności</a>
-                        </label>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-block">Utwórz konto</button>
-                </form>
-                <div class="auth-separator">
-                    <span>lub</span>
                 </div>
-                <div class="social-auth">
-                    <button class="btn btn-social btn-google">
-                        <i class='bx bxl-google'></i>
-                        Zarejestruj przez Google
-                    </button>
-                    <button class="btn btn-social btn-facebook">
-                        <i class='bx bxl-facebook'></i>
-                        Zarejestruj przez Facebook
-                    </button>
+                
+                <div class="auth-field">
+                    <label for="reg-email">Email</label>
+                    <div class="auth-input-container">
+                        <i class='bx bx-envelope'></i>
+                        <input type="email" id="reg-email" class="auth-input" placeholder="Twój adres email" required>
+                    </div>
                 </div>
-                <div class="auth-redirect">
-                    Masz już konto? <a href="#" class="switch-modal" data-target="login-modal">Zaloguj się</a>
+                
+                <div class="auth-field">
+                    <label for="reg-password">Hasło</label>
+                    <div class="auth-input-container">
+                        <i class='bx bx-lock-alt'></i>
+                        <input type="password" id="reg-password" class="auth-input" placeholder="Utwórz hasło" required>
+                    </div>
                 </div>
+                
+                <div class="auth-remember">
+                    <input type="checkbox" id="terms" required>
+                    <label for="terms">Akceptuję <a href="#">Regulamin</a> oraz <a href="#">Politykę prywatności</a></label>
+                </div>
+                
+                <button type="submit" class="auth-btn">Zarejestruj się</button>
+            </form>
+            
+            <div class="auth-divider">lub</div>
+            
+            <button class="social-btn google">
+                <i class='bx bxl-google'></i>
+                Zarejestruj przez Google
+            </button>
+            
+            <button class="social-btn facebook">
+                <i class='bx bxl-facebook-circle'></i>
+                Zarejestruj przez Facebook
+            </button>
+            
+            <div class="auth-footer">
+                Masz już konto? <a href="#" class="switch-modal" data-target="login-modal">Zaloguj się</a>
             </div>
         </div>
     </div>
