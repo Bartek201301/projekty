@@ -3,7 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle intro animation
     setTimeout(() => {
         document.getElementById('intro-animation').classList.add('hidden');
-        document.getElementById('main-content').classList.add('visible');
+        setTimeout(() => {
+            document.getElementById('main-content').classList.add('visible');
+            initScrollAnimations(); // Inicjalizacja animacji przewijania natychmiast po pokazaniu zawartości
+        }, 600);
     }, 2500);
 
     // Initialize all animations and interactions
@@ -13,7 +16,180 @@ document.addEventListener('DOMContentLoaded', () => {
     initScrollAnimations();
     setupReadMoreLinks();
     enhanceTrustedLogos();
+    
+    // Initialize modals
+    initModals();
 });
+
+// Modal functionality
+function initModals() {
+    const modalTriggers = document.querySelectorAll('.show-modal');
+    const modalCloseButtons = document.querySelectorAll('.close-modal');
+    const modalSwitchButtons = document.querySelectorAll('.switch-modal');
+    const modalOverlay = document.getElementById('modal-overlay');
+    
+    // Open modal
+    modalTriggers.forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modalId = trigger.getAttribute('data-modal');
+            const modal = document.getElementById(modalId);
+            
+            // Close any open modals first
+            document.querySelectorAll('.modal.active').forEach(m => {
+                m.classList.remove('active');
+            });
+            
+            // Show the overlay and modal
+            modalOverlay.classList.add('active');
+            modal.classList.add('active');
+            
+            // Disable page scrolling
+            document.body.style.overflow = 'hidden';
+        });
+    });
+    
+    // Close modal when clicking close button
+    modalCloseButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const modalId = button.getAttribute('data-modal');
+            const modal = document.getElementById(modalId);
+            
+            modal.classList.remove('active');
+            modalOverlay.classList.remove('active');
+            
+            // Re-enable page scrolling
+            document.body.style.overflow = '';
+        });
+    });
+    
+    // Close modal when clicking on overlay
+    modalOverlay.addEventListener('click', () => {
+        document.querySelectorAll('.modal.active').forEach(modal => {
+            modal.classList.remove('active');
+        });
+        
+        modalOverlay.classList.remove('active');
+        
+        // Re-enable page scrolling
+        document.body.style.overflow = '';
+    });
+    
+    // Switch between modals
+    modalSwitchButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Close current modal
+            const currentModal = button.closest('.modal');
+            currentModal.classList.remove('active');
+            
+            // Open target modal
+            const targetModalId = button.getAttribute('data-target');
+            const targetModal = document.getElementById(targetModalId);
+            targetModal.classList.add('active');
+        });
+    });
+    
+    // Handle form submissions (mock functionality)
+    document.querySelectorAll('.auth-form').forEach(form => {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Show success message (in a real app, this would be after server validation)
+            const formType = form.closest('.modal').id === 'login-modal' ? 'logowania' : 'rejestracji';
+            
+            // Mock form processing
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Przetwarzanie...';
+            
+            setTimeout(() => {
+                // Close modal
+                form.closest('.modal').classList.remove('active');
+                modalOverlay.classList.remove('active');
+                
+                // Show success notification
+                showNotification(`Proces ${formType} zakończony pomyślnie!`, 'success');
+                
+                // Reset form
+                form.reset();
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+                
+                // Re-enable page scrolling
+                document.body.style.overflow = '';
+            }, 1500);
+        });
+    });
+}
+
+// Notification system
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    
+    // Add icon based on type
+    let icon = '';
+    switch(type) {
+        case 'success':
+            icon = '<i class="bx bx-check-circle"></i>';
+            break;
+        case 'error':
+            icon = '<i class="bx bx-error-circle"></i>';
+            break;
+        default:
+            icon = '<i class="bx bx-info-circle"></i>';
+    }
+    
+    notification.innerHTML = `
+        ${icon}
+        <span>${message}</span>
+        <button class="notification-close"><i class="bx bx-x"></i></button>
+    `;
+    
+    // Add to document
+    if (!document.querySelector('.notification-container')) {
+        const container = document.createElement('div');
+        container.className = 'notification-container';
+        document.body.appendChild(container);
+    }
+    
+    document.querySelector('.notification-container').appendChild(notification);
+    
+    // Show notification with animation
+    setTimeout(() => {
+        notification.classList.add('active');
+    }, 10);
+    
+    // Auto-close notification
+    const timeout = setTimeout(() => {
+        closeNotification(notification);
+    }, 5000);
+    
+    // Close button functionality
+    notification.querySelector('.notification-close').addEventListener('click', () => {
+        clearTimeout(timeout);
+        closeNotification(notification);
+    });
+}
+
+function closeNotification(notification) {
+    notification.classList.add('closing');
+    
+    setTimeout(() => {
+        notification.remove();
+        
+        // Remove container if empty
+        const container = document.querySelector('.notification-container');
+        if (container && container.children.length === 0) {
+            container.remove();
+        }
+    }, 300);
+}
 
 // Navbar functionality
 function initNavbar() {
@@ -41,19 +217,10 @@ function initNavbar() {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             e.preventDefault();
-            const targetId = this.getAttribute('href');
-            
-            if (targetId === '#' || targetId === '') return;
-            
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                // Close mobile menu if open
-                if (mobileMenu && mobileMenu.classList.contains('open')) {
-                    mobileMenu.classList.remove('open');
-                }
-                
-                // Scroll to element
-                targetElement.scrollIntoView({
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                window.scrollTo({
+                    top: target.offsetTop - 80,
                     behavior: 'smooth'
                 });
             }
@@ -65,29 +232,32 @@ function initNavbar() {
 function initHeroAnimations() {
     // Animate hero content on load
     const heroContent = document.querySelector('.hero-content');
+    const heroStats = document.querySelectorAll('.stat');
+    
     if (heroContent) {
         heroContent.style.opacity = '0';
-        heroContent.style.transform = 'translateY(20px)';
+        heroContent.style.transform = 'translateY(30px)';
         
         setTimeout(() => {
-            heroContent.style.transition = 'opacity 1.2s ease, transform 1.2s ease';
+            heroContent.style.transition = 'opacity 1s ease, transform 1s ease';
             heroContent.style.opacity = '1';
             heroContent.style.transform = 'translateY(0)';
-        }, 500);
+            
+            // Animate stats with delay
+            if (heroStats.length) {
+                heroStats.forEach((stat, index) => {
+                    stat.style.opacity = '0';
+                    stat.style.transform = 'translateY(20px)';
+                    
+                    setTimeout(() => {
+                        stat.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                        stat.style.opacity = '1';
+                        stat.style.transform = 'translateY(0)';
+                    }, 800 + (index * 200));
+                });
+            }
+        }, 800);
     }
-    
-    // Animate hero stats with sequence
-    const stats = document.querySelectorAll('.stat');
-    stats.forEach((stat, index) => {
-        stat.style.opacity = '0';
-        stat.style.transform = 'translateY(20px)';
-        
-        setTimeout(() => {
-            stat.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-            stat.style.opacity = '1';
-            stat.style.transform = 'translateY(0)';
-        }, 800 + (index * 200));
-    });
 }
 
 // Orbit system setup and animation
@@ -192,49 +362,131 @@ function setupReadMoreLinks() {
 
 // Enhance scroll animations for all sections
 function initScrollAnimations() {
-    // Add animation classes to elements
-    const animElements = [
-        ...document.querySelectorAll('.feature-card'),
-        ...document.querySelectorAll('.reason-card'),
-        ...document.querySelectorAll('.showcase-content'),
-        ...document.querySelectorAll('.showcase-visual'),
-        ...document.querySelectorAll('.cta-content'),
-        ...document.querySelectorAll('.footer-content')
-    ];
+    // Wybierz wszystkie elementy z klasą animate-on-scroll
+    const animatedElements = document.querySelectorAll(".animate-on-scroll");
     
-    animElements.forEach(el => el.classList.add('animate-on-scroll'));
+    // Dodaj klasę visible do wszystkich elementów, które są już widoczne przy załadowaniu
+    animateVisibleElements();
     
-    // Create intersection observer
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry, index) => {
+    // Ustaw Intersection Observer dla animacji podczas przewijania
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            // Gdy element wchodzi w viewport
             if (entry.isIntersecting) {
-                // Stagger animation based on item type and index
-                setTimeout(() => {
-                    entry.target.classList.add('visible');
-                }, getDelayForElement(entry.target, index));
+                const element = entry.target;
                 
-                // Unobserve after animation
-                observer.unobserve(entry.target);
+                // Opóźnienie oparte na typie elementu lub pozycji
+                let delay = 0;
+                
+                // Zastosuj różne opóźnienia w zależności od typu elementu
+                if (element.classList.contains("feature-card")) {
+                    const index = Array.from(
+                        document.querySelectorAll(".feature-card")
+                    ).indexOf(element);
+                    delay = index * 150;
+                } else if (element.classList.contains("reason-card")) {
+                    const index = Array.from(
+                        document.querySelectorAll(".reason-card")
+                    ).indexOf(element);
+                    delay = index * 150;
+                } else if (element.classList.contains("feature-icon")) {
+                    delay = 100;
+                } else if (element.classList.contains("reason-icon")) {
+                    delay = 100;
+                } else if (element.classList.contains("feature-more")) {
+                    delay = 300; // Opóźnienie dla strzałek "Read More"
+                }
+                
+                // Dodaj klasę visible po określonym opóźnieniu
+                setTimeout(() => {
+                    element.classList.add("visible");
+                    
+                    // Dla kart funkcji, animuj również ich ikony i przyciski "Czytaj więcej"
+                    if (element.classList.contains("feature-card")) {
+                        const icon = element.querySelector(".feature-icon");
+                        const more = element.querySelector(".feature-more");
+                        
+                        if (icon) icon.classList.add("visible");
+                        if (more) {
+                            setTimeout(() => {
+                                more.classList.add("visible");
+                            }, 300);
+                        }
+                    }
+                    
+                    // Dla kart powodów, animuj również ich ikony
+                    if (element.classList.contains("reason-card")) {
+                        const icon = element.querySelector(".reason-icon");
+                        if (icon) icon.classList.add("visible");
+                    }
+                }, delay);
+                
+                // Przestań obserwować ten element po jego animacji
+                observer.unobserve(element);
             }
         });
     }, {
-        threshold: 0.15,
-        rootMargin: '0px 0px -10% 0px'
+        root: null, // viewport
+        rootMargin: '0px',
+        threshold: 0.15 // 15% elementu musi być widoczne, aby wywołać callback
     });
     
-    // Observe all animated elements
-    animElements.forEach(el => observer.observe(el));
+    // Rozpocznij obserwację każdego elementu
+    animatedElements.forEach(element => {
+        observer.observe(element);
+    });
+}
+
+// Funkcja do animacji elementów, które są już widoczne przy załadowaniu strony
+function animateVisibleElements() {
+    const animatedElements = document.querySelectorAll(".animate-on-scroll");
     
-    // Function to calculate staggered delay based on element type
-    function getDelayForElement(element, index) {
-        if (element.classList.contains('feature-card')) {
-            return 100 + (index % 4) * 150; // Stagger feature cards
-        } else if (element.classList.contains('reason-card')) {
-            return 100 + (index % 4) * 150; // Stagger reason cards
-        } else {
-            return 100; // Default delay
+    animatedElements.forEach((element, index) => {
+        // Sprawdź, czy element jest już widoczny w oknie przeglądarki
+        const rect = element.getBoundingClientRect();
+        const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+        
+        if (rect.top < windowHeight && rect.bottom > 0) {
+            let delay = 0;
+            
+            // Zastosuj różne opóźnienia w zależności od typu elementu
+            if (element.classList.contains("feature-card")) {
+                delay = index * 150;
+            } else if (element.classList.contains("reason-card")) {
+                delay = index * 150;
+            } else if (element.classList.contains("feature-icon")) {
+                delay = 100;
+            } else if (element.classList.contains("reason-icon")) {
+                delay = 100;
+            } else if (element.classList.contains("feature-more")) {
+                delay = 300; // Opóźnienie dla strzałek "Read More"
+            }
+            
+            // Animuj element po określonym opóźnieniu
+            setTimeout(() => {
+                element.classList.add("visible");
+                
+                // Dla kart funkcji, animuj również ich ikony i przyciski "Czytaj więcej"
+                if (element.classList.contains("feature-card")) {
+                    const icon = element.querySelector(".feature-icon");
+                    const more = element.querySelector(".feature-more");
+                    
+                    if (icon) icon.classList.add("visible");
+                    if (more) {
+                        setTimeout(() => {
+                            more.classList.add("visible");
+                        }, 300);
+                    }
+                }
+                
+                // Dla kart powodów, animuj również ich ikony
+                if (element.classList.contains("reason-card")) {
+                    const icon = element.querySelector(".reason-icon");
+                    if (icon) icon.classList.add("visible");
+                }
+            }, delay);
         }
-    }
+    });
 }
 
 // Enhance the trusted by logos section
@@ -291,4 +543,13 @@ function enhanceButtonEffects() {
 // Call additional initialization on load
 window.addEventListener('load', () => {
     enhanceButtonEffects();
+    
+    // Ręcznie pokaż wszystkie strzałki "czytaj więcej" po załadowaniu
+    document.querySelectorAll('.feature-more').forEach(arrow => {
+        setTimeout(() => {
+            arrow.classList.add('visible');
+            arrow.style.opacity = '1';
+            arrow.style.transform = 'translateY(0)';
+        }, 800);
+    });
 }); 
