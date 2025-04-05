@@ -615,4 +615,38 @@ function initTechTabs() {
             if (targetPanel) targetPanel.classList.add('active');
         });
     });
-} 
+}
+
+// Handle registration form submission
+document.addEventListener('DOMContentLoaded', function() {
+  const registerForm = document.querySelector('#register-modal form');
+  
+  if (registerForm) {
+    registerForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Simulate registration (no actual backend validation)
+      console.log('Registration submitted');
+      
+      // Close modal
+      const registerModal = document.getElementById('register-modal');
+      registerModal.classList.remove('show');
+      document.body.classList.remove('modal-open');
+      const modalBackdrops = document.getElementsByClassName('modal-backdrop');
+      while(modalBackdrops.length > 0) {
+        modalBackdrops[0].parentNode.removeChild(modalBackdrops[0]);
+      }
+      
+      // Simulating a log in process with a short delay
+      const loginMessage = document.createElement('div');
+      loginMessage.className = 'login-message';
+      loginMessage.innerHTML = '<div class="loading-spinner"></div><p>Logowanie...</p>';
+      document.body.appendChild(loginMessage);
+      
+      // After a short delay, redirect to the todos page
+      setTimeout(function() {
+        window.location.href = 'projekty/timemanager-dashboard/';
+      }, 2000);
+    });
+  }
+}); 
