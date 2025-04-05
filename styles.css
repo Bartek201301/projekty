@@ -1554,4 +1554,401 @@ ul {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* How it works section */
+.how-it-works {
+    background-color: var(--section-2);
+    padding: var(--spacing-xxl) 0;
+    position: relative;
+}
+
+.steps-container {
+    margin-top: var(--spacing-xl);
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    background-color: rgba(26, 26, 46, 0.6);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.step:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    font-weight: 700;
+    font-size: var(--font-size-lg);
+    border-radius: 50%;
+    margin-right: var(--spacing-lg);
+    flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(138, 92, 255, 0.4);
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.step-desc {
+    color: var(--gray-text);
+    font-size: var(--font-size-md);
+}
+
+.step-image {
+    flex-shrink: 0;
+    margin-left: var(--spacing-lg);
+}
+
+.step-icon {
+    font-size: 3rem;
+    color: var(--primary);
+    opacity: 0.8;
+}
+
+.cta-centered {
+    text-align: center;
+    margin-top: var(--spacing-xl);
+}
+
+/* Pricing section */
+.pricing {
+    background-color: var(--section-1);
+    padding: var(--spacing-xxl) 0;
+    position: relative;
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-xl);
+}
+
+.pricing-card {
+    background-color: rgba(26, 26, 46, 0.6);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    padding: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    border: 1px solid rgba(138, 92, 255, 0.1);
+}
+
+.pricing-card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(138, 92, 255, 0.3);
+}
+
+.pricing-card.featured {
+    border: 2px solid var(--primary);
+    box-shadow: 0 5px 20px rgba(138, 92, 255, 0.2);
+}
+
+.popular-tag {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: 0 0 0 var(--radius-md);
+}
+
+.pricing-header {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid rgba(180, 180, 199, 0.1);
+}
+
+.pricing-title {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+    color: var(--light-text);
+}
+
+.pricing-price {
+    font-size: var(--font-size-xxl);
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.pricing-period {
+    font-size: var(--font-size-sm);
+    color: var(--gray-text);
+}
+
+.pricing-features {
+    margin-bottom: var(--spacing-xl);
+    flex-grow: 1;
+}
+
+.pricing-features li {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+    color: var(--gray-text);
+}
+
+.pricing-features li i {
+    color: var(--primary);
+    margin-right: var(--spacing-sm);
+    font-size: 1.2em;
+}
+
+/* Contact section */
+.contact {
+    background-color: var(--section-2);
+    padding: var(--spacing-xxl) 0;
+    position: relative;
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: var(--spacing-xl);
+    margin-top: var(--spacing-xl);
+}
+
+@media (max-width: 991px) {
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.contact-method {
+    background-color: rgba(26, 26, 46, 0.6);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.contact-method:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+}
+
+.contact-icon {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.contact-method h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.contact-method p {
+    color: var(--gray-text);
+    margin-bottom: var(--spacing-xs);
+}
+
+.contact-social {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.social-link {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(26, 26, 46, 0.6);
+    border-radius: 50%;
+    font-size: 1.5rem;
+    color: var(--light-text);
+    transition: all 0.3s ease;
+}
+
+.social-link:hover {
+    background-color: var(--primary);
+    transform: translateY(-3px);
+}
+
+.contact-form-container {
+    background-color: rgba(26, 26, 46, 0.6);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: var(--spacing-md);
+    background-color: rgba(15, 15, 28, 0.8);
+    border: 1px solid rgba(138, 92, 255, 0.2);
+    border-radius: var(--radius-md);
+    color: var(--light-text);
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(138, 92, 255, 0.1);
+}
+
+/* Enhanced animations */
+@keyframes float {
+    0% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(138, 92, 255, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(138, 92, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(138, 92, 255, 0);
+    }
+}
+
+@keyframes slide-in-left {
+    from {
+        transform: translateX(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        transform: translateX(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes grow-up {
+    from {
+        transform: scaleY(0);
+        opacity: 0;
+    }
+    to {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+/* Apply animation to elements */
+.step:nth-child(odd) {
+    animation: slide-in-left 0.5s ease forwards;
+}
+
+.step:nth-child(even) {
+    animation: slide-in-right 0.5s ease forwards;
+}
+
+.step-number {
+    animation: pulse-glow 2s infinite;
+}
+
+.pricing-card {
+    animation: grow-up 0.5s ease forwards;
+}
+
+.contact-method {
+    animation: float 4s ease-in-out infinite;
+}
+
+.hero-visual .orbit-system {
+    animation: float 6s ease-in-out infinite;
+}
+
+.hero-visual .orbit-icon {
+    animation: pulse-glow 3s infinite;
 } 
