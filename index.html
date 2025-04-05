@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeManager - Rewolucjonizuj swoją produktywność</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#0F0F1C] text-white font-sans min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="py-4 px-6 md:px-16 flex justify-between items-center relative z-10">
+        <div class="flex items-center gap-2">
+            <i class='bx bx-time text-[#8A5CFF] text-3xl'></i>
+            <span class="text-xl font-bold text-white">TimeManager</span>
+        </div>
+        
+        <div class="hidden md:flex items-center gap-8">
+            <a href="#" class="text-gray-300 hover:text-white transition-colors">Funkcje</a>
+            <a href="#" class="text-gray-300 hover:text-white transition-colors">Dlaczego My?</a>
+            <a href="#" class="text-gray-300 hover:text-white transition-colors">Cennik</a>
+            <a href="#" class="text-gray-300 hover:text-white transition-colors">Kontakt</a>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <button class="px-4 py-2 border border-[#8A5CFF] rounded-full text-white hover:bg-[#8A5CFF]/20 transition-all">
+                Zaloguj się
+            </button>
+            <button class="px-4 py-2 bg-gradient-to-r from-[#8A5CFF] to-[#614AD3] rounded-full text-white hover:opacity-90 transition-all shadow-lg shadow-[#8A5CFF]/30">
+                Załóż konto
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="px-6 md:px-16 pt-16 pb-24 md:flex items-center justify-between">
+        <div class="md:w-1/2 md:pr-12">
+            <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4">
+                Rewolucjonizuj swoją produktywność z <span class="text-[#8A5CFF]">TimeManager!</span>
+            </h1>
+            <p class="text-lg text-gray-300 mb-8">
+                Planuj, automatyzuj i monitoruj swoje działania w jednym miejscu.
+            </p>
+            <div class="flex flex-wrap gap-4">
+                <button class="px-6 py-3 bg-gradient-to-r from-[#8A5CFF] to-[#614AD3] rounded-full text-white hover:opacity-90 transition-all shadow-lg shadow-[#8A5CFF]/30 font-medium">
+                    Zacznij za darmo
+                </button>
+                <button class="px-6 py-3 border border-[#8A5CFF] rounded-full text-white hover:bg-[#8A5CFF]/20 transition-all font-medium">
+                    Zobacz jak to działa
+                </button>
+            </div>
+        </div>
+
+        <div class="md:w-1/2 mt-12 md:mt-0 relative">
+            <div class="hero-illustration relative w-full aspect-square max-w-md mx-auto">
+                <!-- Orbiting elements -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="orbit-container w-full h-full relative">
+                        <!-- Central element -->
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#8A5CFF] w-20 h-20 rounded-full flex items-center justify-center shadow-lg shadow-[#8A5CFF]/30 z-10">
+                            <i class='bx bx-time-five text-3xl'></i>
+                        </div>
+                        
+                        <!-- Orbit path (visible) -->
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full border border-[#8A5CFF]/30"></div>
+                        
+                        <!-- Orbiting elements -->
+                        <div class="orbit-element bg-[#614AD3] p-3 rounded-full absolute shadow-md shadow-[#614AD3]/30" style="top: 10%; left: 50%; transform: translateX(-50%)">
+                            <i class='bx bx-calendar text-xl'></i>
+                        </div>
+                        <div class="orbit-element bg-[#614AD3] p-3 rounded-full absolute shadow-md shadow-[#614AD3]/30" style="top: 50%; left: 10%; transform: translateY(-50%)">
+                            <i class='bx bx-line-chart text-xl'></i>
+                        </div>
+                        <div class="orbit-element bg-[#614AD3] p-3 rounded-full absolute shadow-md shadow-[#614AD3]/30" style="top: 50%; right: 10%; transform: translateY(-50%)">
+                            <i class='bx bx-list-check text-xl'></i>
+                        </div>
+                        <div class="orbit-element bg-[#614AD3] p-3 rounded-full absolute shadow-md shadow-[#614AD3]/30" style="bottom: 10%; left: 50%; transform: translateX(-50%)">
+                            <i class='bx bx-bell text-xl'></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tooltips -->
+                <div class="tooltip absolute top-10 right-20 bg-[#1A1A2E] px-4 py-2 rounded-lg shadow-lg">
+                    <p class="text-sm">Produktywność</p>
+                    <p class="text-[#8A5CFF] font-bold">+91% w tym tygodniu</p>
+                </div>
+                
+                <div class="tooltip absolute bottom-10 right-10 bg-[#1A1A2E] px-4 py-2 rounded-lg shadow-lg">
+                    <p class="text-sm">Czas zaoszczędzony</p>
+                    <p class="text-[#8A5CFF] font-bold">5.9 godzin dzisiaj</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="px-6 md:px-16 py-16 bg-[#0A0A15]">
+        <h2 class="text-3xl font-bold text-center mb-16">Główne funkcjonalności</h2>
+        
+        <div class="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            <!-- Feature 1 -->
+            <div class="feature-card bg-[#1A1A2E] p-8 rounded-xl hover:shadow-lg hover:shadow-[#8A5CFF]/10 transition-all">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 bg-[#8A5CFF]/20 rounded-full flex items-center justify-center">
+                        <i class='bx bx-calendar-check text-[#8A5CFF] text-2xl'></i>
+                    </div>
+                    <h3 class="text-xl font-semibold">Planowanie zadań</h3>
+                </div>
+                <p class="text-gray-300">
+                    Twórz plany dnia, tygodnia lub miesiąca w przejrzysty sposób. Oznaczaj priorytety i integruj je z roadmapami.
+                </p>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="feature-card bg-[#1A1A2E] p-8 rounded-xl hover:shadow-lg hover:shadow-[#8A5CFF]/10 transition-all">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 bg-[#8A5CFF]/20 rounded-full flex items-center justify-center">
+                        <i class='bx bx-git-branch text-[#8A5CFF] text-2xl'></i>
+                    </div>
+                    <h3 class="text-xl font-semibold">Kreator roadmap</h3>
+                </div>
+                <p class="text-gray-300">
+                    Buduj ścieżki do celu w stylu roadmap. Przeciągaj i upuszczaj etapy, dodawaj opisy, terminy i śledź postęp.
+                </p>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="feature-card bg-[#1A1A2E] p-8 rounded-xl hover:shadow-lg hover:shadow-[#8A5CFF]/10 transition-all">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 bg-[#8A5CFF]/20 rounded-full flex items-center justify-center">
+                        <i class='bx bx-line-chart text-[#8A5CFF] text-2xl'></i>
+                    </div>
+                    <h3 class="text-xl font-semibold">Dashboard produktywności</h3>
+                </div>
+                <p class="text-gray-300">
+                    Sprawdzaj statystyki efektywności. Śledź czas pracy, liczbę zrealizowanych zadań i czas skupienia.
+                </p>
+            </div>
+            
+            <!-- Feature 4 -->
+            <div class="feature-card bg-[#1A1A2E] p-8 rounded-xl hover:shadow-lg hover:shadow-[#8A5CFF]/10 transition-all">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 bg-[#8A5CFF]/20 rounded-full flex items-center justify-center">
+                        <i class='bx bxs-file-pdf text-[#8A5CFF] text-2xl'></i>
+                    </div>
+                    <h3 class="text-xl font-semibold">Eksport wyników</h3>
+                </div>
+                <p class="text-gray-300">
+                    W łatwy sposób eksportuj swoje plany, podsumowania i statystyki do formatu PDF, by dzielić się nimi lub drukować.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="px-6 md:px-16 py-20 text-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-[#8A5CFF]/5 to-transparent opacity-70 z-0"></div>
+        <div class="relative z-10 max-w-4xl mx-auto">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">Zacznij organizować swój czas mądrzej już dziś!</h2>
+            <button class="px-8 py-4 bg-gradient-to-r from-[#8A5CFF] to-[#614AD3] rounded-full text-white hover:opacity-90 transition-all shadow-lg shadow-[#8A5CFF]/30 font-medium text-lg">
+                Załóż konto za darmo
+            </button>
+            <p class="mt-6 text-gray-300">Ponad 1,200 użytkowników każdego dnia</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="px-6 md:px-16 py-12 bg-[#0A0A15] mt-auto">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class='bx bx-time text-[#8A5CFF] text-3xl'></i>
+                        <span class="text-xl font-bold text-white">TimeManager</span>
+                    </div>
+                    <p class="text-gray-400">Twoje narzędzie do zarządzania czasem i produktywnością.</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Produkt</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Funkcje</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Cennik</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Dlaczego My?</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Pomoc</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Kontakt</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Wsparcie</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Dokumentacja</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Dokumenty</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Polityka prywatności</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Regulamin</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400">© 2023 TimeManager. Wszelkie prawa zastrzeżone.</p>
+                <div class="flex gap-4 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class='bx bxl-instagram text-xl'></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class='bx bxl-linkedin text-xl'></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class='bx bxl-github text-xl'></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html> 
