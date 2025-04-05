@@ -21,7 +21,7 @@
 
     <!-- Modal logowania -->
     <div id="login-modal" class="modal">
-        <div class="modal-content auth-card">
+        <div class="auth-card modal-content">
             <button class="auth-close close-modal" data-modal="login-modal"><i class='bx bx-x'></i></button>
             <h1 class="auth-title">Logowanie</h1>
             
@@ -43,8 +43,10 @@
                 </div>
                 
                 <div class="auth-remember">
-                    <input type="checkbox" id="remember" name="remember">
-                    <label for="remember">Zapamiętaj mnie</label>
+                    <div class="remember-checkbox">
+                        <input type="checkbox" id="remember" name="remember">
+                        <label for="remember">Zapamiętaj mnie</label>
+                    </div>
                     
                     <a href="#" class="auth-forgot">Zapomniałeś hasła?</a>
                 </div>
@@ -56,12 +58,12 @@
             
             <button class="social-btn google">
                 <i class='bx bxl-google'></i>
-                Zaloguj przez Google
+                <span>Zaloguj przez Google</span>
             </button>
             
             <button class="social-btn facebook">
                 <i class='bx bxl-facebook-circle'></i>
-                Zaloguj przez Facebook
+                <span>Zaloguj przez Facebook</span>
             </button>
             
             <div class="auth-footer">
@@ -72,7 +74,7 @@
 
     <!-- Modal rejestracji -->
     <div id="register-modal" class="modal">
-        <div class="modal-content auth-card">
+        <div class="auth-card modal-content">
             <button class="auth-close close-modal" data-modal="register-modal"><i class='bx bx-x'></i></button>
             <h1 class="auth-title">Rejestracja</h1>
             
@@ -102,8 +104,10 @@
                 </div>
                 
                 <div class="auth-remember">
-                    <input type="checkbox" id="terms" required>
-                    <label for="terms">Akceptuję <a href="#">Regulamin</a> oraz <a href="#">Politykę prywatności</a></label>
+                    <div class="remember-checkbox">
+                        <input type="checkbox" id="terms" required>
+                        <label for="terms">Akceptuję <a href="#">Regulamin</a> oraz <a href="#">Politykę prywatności</a></label>
+                    </div>
                 </div>
                 
                 <button type="submit" class="auth-btn">Zarejestruj się</button>
@@ -113,12 +117,12 @@
             
             <button class="social-btn google">
                 <i class='bx bxl-google'></i>
-                Zarejestruj przez Google
+                <span>Zarejestruj przez Google</span>
             </button>
             
             <button class="social-btn facebook">
                 <i class='bx bxl-facebook-circle'></i>
-                Zarejestruj przez Facebook
+                <span>Zarejestruj przez Facebook</span>
             </button>
             
             <div class="auth-footer">
