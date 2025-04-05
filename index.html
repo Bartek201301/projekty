@@ -3,226 +3,348 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TimeManager - Rewolucjonizuj swoją produktywność</title>
+    <title>TimeManager - Zarządzaj Swoim Czasem Efektywnie</title>
+    
+    <!-- Style i czcionki -->
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
-<body class="bg-[#0F0F1C] text-white font-sans min-h-screen flex flex-col">
-    <!-- Navbar -->
-    <nav class="py-4 px-6 md:px-16 flex justify-between items-center relative z-10">
-        <div class="flex items-center gap-2">
-            <i class='bx bx-time text-[#8A5CFF] text-3xl'></i>
-            <span class="text-xl font-bold text-white">TimeManager</span>
+<body>
+    <!-- Animacja wprowadzająca -->
+    <div id="intro-animation">
+        <div class="logo-container">
+            <i class='bx bx-time logo-icon' ></i>
+            <span class="logo-text">TimeManager</span>
         </div>
-        
-        <div class="hidden md:flex items-center gap-8">
-            <a href="#" class="text-gray-300 hover:text-white transition-colors">Funkcje</a>
-            <a href="#" class="text-gray-300 hover:text-white transition-colors">Dlaczego My?</a>
-            <a href="#" class="text-gray-300 hover:text-white transition-colors">Cennik</a>
-            <a href="#" class="text-gray-300 hover:text-white transition-colors">Kontakt</a>
-        </div>
-        
-        <div class="flex items-center gap-4">
-            <button class="px-4 py-2 border border-[#8A5CFF] rounded-full text-white hover:bg-[#8A5CFF]/20 transition-all">
-                Zaloguj się
-            </button>
-            <button class="px-4 py-2 bg-gradient-to-r from-[#8A5CFF] to-[#614AD3] rounded-full text-white hover:opacity-90 transition-all shadow-lg shadow-[#8A5CFF]/30">
-                Załóż konto
-            </button>
-        </div>
-    </nav>
+        <p class="intro-tagline">Zarządzaj swoim czasem efektywnie</p>
+    </div>
 
-    <!-- Hero Section -->
-    <section class="px-6 md:px-16 pt-16 pb-24 md:flex items-center justify-between">
-        <div class="md:w-1/2 md:pr-12">
-            <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4">
-                Rewolucjonizuj swoją produktywność z <span class="text-[#8A5CFF]">TimeManager!</span>
-            </h1>
-            <p class="text-lg text-gray-300 mb-8">
-                Planuj, automatyzuj i monitoruj swoje działania w jednym miejscu.
-            </p>
-            <div class="flex flex-wrap gap-4">
-                <button class="px-6 py-3 bg-gradient-to-r from-[#8A5CFF] to-[#614AD3] rounded-full text-white hover:opacity-90 transition-all shadow-lg shadow-[#8A5CFF]/30 font-medium">
-                    Zacznij za darmo
-                </button>
-                <button class="px-6 py-3 border border-[#8A5CFF] rounded-full text-white hover:bg-[#8A5CFF]/20 transition-all font-medium">
-                    Zobacz jak to działa
-                </button>
+    <!-- Główna zawartość -->
+    <div id="main-content">
+        <!-- Nawigacja -->
+        <nav class="navbar">
+            <div class="container">
+                <a href="#" class="logo">
+                    <i class='bx bx-time'></i>
+                    <span>TimeManager</span>
+                </a>
+                
+                <ul class="nav-links">
+                    <li><a href="#features" class="nav-link">Funkcje</a></li>
+                    <li><a href="#why-us" class="nav-link">Dlaczego My</a></li>
+                    <li><a href="#cta" class="nav-link">Zacznij</a></li>
+                </ul>
+                
+                <div class="auth-buttons">
+                    <a href="#" class="btn btn-outline">Zaloguj się</a>
+                    <a href="#" class="btn btn-primary">Utwórz konto</a>
+                </div>
+                
+                <div class="mobile-menu-toggle">
+                    <i class='bx bx-menu'></i>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="mobile-menu">
+            <a href="#features" class="mobile-link">Funkcje</a>
+            <a href="#why-us" class="mobile-link">Dlaczego My</a>
+            <a href="#cta" class="mobile-link">Zacznij</a>
+            
+            <div class="mobile-auth">
+                <a href="#" class="btn btn-outline btn-block">Zaloguj się</a>
+                <a href="#" class="btn btn-primary btn-block">Utwórz konto</a>
             </div>
         </div>
-
-        <div class="md:w-1/2 mt-12 md:mt-0 relative">
-            <div class="hero-illustration relative w-full aspect-square max-w-md mx-auto">
-                <!-- Orbiting elements -->
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="orbit-container w-full h-full relative">
-                        <!-- Central element -->
-                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#8A5CFF] w-20 h-20 rounded-full flex items-center justify-center shadow-lg shadow-[#8A5CFF]/30 z-10">
-                            <i class='bx bx-time-five text-3xl'></i>
+        
+        <!-- Sekcja Hero -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Zarządzaj swoim czasem jak <span class="accent">profesjonalista</span></h1>
+                    <p class="hero-subtitle">Kompleksowe narzędzie do zarządzania czasem, planowania zadań i monitorowania produktywności w jednym miejscu.</p>
+                    
+                    <div class="hero-buttons">
+                        <a href="#" class="btn btn-primary btn-lg">Rozpocznij za darmo</a>
+                        <a href="#" class="btn btn-secondary btn-lg">Jak to działa</a>
+                    </div>
+                    
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <span class="stat-number">98%</span>
+                            <span class="stat-desc">wzrost produktywności</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">10K+</span>
+                            <span class="stat-desc">aktywnych użytkowników</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">4.9/5</span>
+                            <span class="stat-desc">ocena użytkowników</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="hero-visual">
+                    <div class="orbit-system">
+                        <div class="orbit-center">
+                            <i class='bx bx-time'></i>
+                        </div>
+                        <div class="orbit orbit-1">
+                            <div class="orbit-icon">
+                                <i class='bx bx-task'></i>
+                            </div>
+                        </div>
+                        <div class="orbit orbit-2">
+                            <div class="orbit-icon">
+                                <i class='bx bx-line-chart'></i>
+                            </div>
+                        </div>
+                        <div class="orbit orbit-3">
+                            <div class="orbit-icon">
+                                <i class='bx bx-calendar'></i>
+                            </div>
+                        </div>
+                        <div class="orbit orbit-4">
+                            <div class="orbit-icon">
+                                <i class='bx bx-export'></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-wave"></div>
+        </section>
+        
+        <!-- Sekcja "Zaufali nam" -->
+        <section class="trusted-by">
+            <div class="container">
+                <h3 class="trusted-title">Zaufali nam</h3>
+                <div class="trusted-logos">
+                    <img src="https://via.placeholder.com/120x40/1A1A2E/8A5CFF?text=Google" alt="Google" class="trusted-logo">
+                    <img src="https://via.placeholder.com/120x40/1A1A2E/8A5CFF?text=Microsoft" alt="Microsoft" class="trusted-logo">
+                    <img src="https://via.placeholder.com/120x40/1A1A2E/8A5CFF?text=Adobe" alt="Adobe" class="trusted-logo">
+                    <img src="https://via.placeholder.com/120x40/1A1A2E/8A5CFF?text=Amazon" alt="Amazon" class="trusted-logo">
+                    <img src="https://via.placeholder.com/120x40/1A1A2E/8A5CFF?text=IBM" alt="IBM" class="trusted-logo">
+                    <img src="https://via.placeholder.com/120x40/1A1A2E/8A5CFF?text=Tesla" alt="Tesla" class="trusted-logo">
+                </div>
+            </div>
+        </section>
+        
+        <!-- Sekcja Funkcje -->
+        <section id="features" class="features section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Kluczowe funkcje</h2>
+                    <p class="section-subtitle">Odkryj narzędzia, które pomogą Ci planować, realizować i monitorować Twoje codzienne zadania.</p>
+                </div>
+                
+                <div class="features-grid">
+                    <div class="feature-card animate-on-scroll">
+                        <div class="feature-icon">
+                            <i class='bx bx-task'></i>
+                        </div>
+                        <h3 class="feature-title">Planowanie zadań</h3>
+                        <p class="feature-desc">Twórz listy zadań, ustalaj priorytety i kategoryzuj swoje obowiązki. Dzięki intuicyjnemu interfejsowi szybko zorganizujesz pracę i nigdy nie zapomnisz o ważnych sprawach.</p>
+                        <ul class="feature-list">
+                            <li>Intuicyjne listy zadań</li>
+                            <li>Priorytety i kategorie</li>
+                            <li>Przypomnienia i terminy</li>
+                            <li>Powtarzające się zadania</li>
+                        </ul>
+                        <a href="#" class="feature-more">Czytaj więcej <i class='bx bx-chevron-right'></i></a>
+                    </div>
+                    
+                    <div class="feature-card animate-on-scroll">
+                        <div class="feature-icon">
+                            <i class='bx bx-map'></i>
+                        </div>
+                        <h3 class="feature-title">Tworzenie roadmap</h3>
+                        <p class="feature-desc">Planuj długoterminowe cele i rozbijaj je na mniejsze etapy. Wizualizuj swój postęp i śledź kamienie milowe dzięki przejrzystym mapom drogowym.</p>
+                        <ul class="feature-list">
+                            <li>Cele długo i krótkoterminowe</li>
+                            <li>Wizualne mapy drogowe</li>
+                            <li>Śledzenie kamieni milowych</li>
+                            <li>Współdzielenie planu z zespołem</li>
+                        </ul>
+                        <a href="#" class="feature-more">Czytaj więcej <i class='bx bx-chevron-right'></i></a>
+                    </div>
+                    
+                    <div class="feature-card animate-on-scroll">
+                        <div class="feature-icon">
+                            <i class='bx bx-line-chart'></i>
+                        </div>
+                        <h3 class="feature-title">Panel produktywności</h3>
+                        <p class="feature-desc">Analizuj swoją efektywność, śledź czas spędzony na zadaniach i otrzymuj personalizowane raporty, które pomogą Ci optymalizować codzienną pracę.</p>
+                        <ul class="feature-list">
+                            <li>Statystyki produktywności</li>
+                            <li>Mierzenie czasu zadań</li>
+                            <li>Personalizowane raporty</li>
+                            <li>Analiza efektywności</li>
+                        </ul>
+                        <a href="#" class="feature-more">Czytaj więcej <i class='bx bx-chevron-right'></i></a>
+                    </div>
+                    
+                    <div class="feature-card animate-on-scroll">
+                        <div class="feature-icon">
+                            <i class='bx bx-export'></i>
+                        </div>
+                        <h3 class="feature-title">Eksport wyników</h3>
+                        <p class="feature-desc">Generuj profesjonalne raporty w formacie PDF, prezentujące Twoje osiągnięcia, statystyki i wykresy. Idealne do dokumentacji pracy i raportowania.</p>
+                        <ul class="feature-list">
+                            <li>Eksport do PDF</li>
+                            <li>Profesjonalne szablony</li>
+                            <li>Konfigurowalne raporty</li>
+                            <li>Automatyczne harmonogramy</li>
+                        </ul>
+                        <a href="#" class="feature-more">Czytaj więcej <i class='bx bx-chevron-right'></i></a>
+                    </div>
+                </div>
+                
+                <div class="features-showcase animate-on-scroll">
+                    <div class="showcase-content">
+                        <h3>Wyprzedź konkurencję dzięki planowaniu</h3>
+                        <p>Nasz intuicyjny system planowania pomoże Ci organizować dzień, ustalać priorytety zadań i efektywnie zarządzać swoim czasem. Zwiększ swoją produktywność dzięki prostym, ale potężnym narzędziom.</p>
+                        <a href="#" class="btn btn-primary">Wypróbuj teraz</a>
+                    </div>
+                    <div class="showcase-visual">
+                        <img src="https://via.placeholder.com/550x350/1A1A2E/8A5CFF?text=Planning+Dashboard" alt="Planning Dashboard">
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Sekcja "Dlaczego TimeManager?" -->
+        <section id="why-us" class="why-us section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Dlaczego TimeManager?</h2>
+                    <p class="section-subtitle">Odkryj, co wyróżnia nasze rozwiązanie i dlaczego tysiące użytkowników wybiera TimeManager każdego dnia.</p>
+                </div>
+                
+                <div class="why-us-content">
+                    <div class="reason-card animate-on-scroll">
+                        <div class="reason-icon">
+                            <i class='bx bx-crown'></i>
+                        </div>
+                        <div class="reason-text">
+                            <h3 class="reason-title">Intuicyjny interfejs</h3>
+                            <p class="reason-desc">Prosty w obsłudze, przyjazny dla użytkownika interfejs, który nie wymaga długiej nauki. Zacznij planować już w kilka minut.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="reason-card animate-on-scroll">
+                        <div class="reason-icon">
+                            <i class='bx bx-customize'></i>
+                        </div>
+                        <div class="reason-text">
+                            <h3 class="reason-title">Pełna personalizacja</h3>
+                            <p class="reason-desc">Dostosuj aplikację do swoich potrzeb - wybierz układ, kolory, kategorie i powiadomienia, aby stworzyć idealne środowisko pracy.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="reason-card animate-on-scroll">
+                        <div class="reason-icon">
+                            <i class='bx bx-devices'></i>
+                        </div>
+                        <div class="reason-text">
+                            <h3 class="reason-title">Dostęp na każdym urządzeniu</h3>
+                            <p class="reason-desc">Korzystaj z TimeManager na komputerze, tablecie i smartfonie. Twoje dane są zawsze zsynchronizowane i dostępne gdziekolwiek jesteś.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="reason-card animate-on-scroll">
+                        <div class="reason-icon">
+                            <i class='bx bx-shield-quarter'></i>
+                        </div>
+                        <div class="reason-text">
+                            <h3 class="reason-title">Bezpieczeństwo danych</h3>
+                            <p class="reason-desc">Twoje dane są zabezpieczone przez najnowsze protokoły szyfrowania. Kontroluj dostęp i zarządzaj swoją prywatnością.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Sekcja CTA -->
+        <section id="cta" class="cta">
+            <div class="container">
+                <div class="cta-content animate-on-scroll">
+                    <h2 class="cta-title">Gotowy, by zacząć organizować swój czas?</h2>
+                    <p class="cta-subtitle">Dołącz do tysięcy użytkowników, którzy już zwiększyli swoją produktywność z TimeManager. Zarejestruj się za darmo i zacznij już dziś!</p>
+                    <div class="cta-buttons">
+                        <a href="#" class="btn btn-outline-light btn-lg">Rozpocznij teraz</a>
+                        <a href="#" class="btn btn-secondary btn-lg">Dowiedz się więcej</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Stopka -->
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content animate-on-scroll">
+                    <div class="footer-brand">
+                        <a href="#" class="logo">
+                            <i class='bx bx-time'></i>
+                            <span>TimeManager</span>
+                        </a>
+                        <p class="brand-desc">TimeManager to nowoczesne narzędzie do zarządzania czasem, które pomaga planować zadania, tworzyć mapy drogowe i monitorować produktywność.</p>
+                        
+                        <div class="social-media">
+                            <a href="#" class="social-icon"><i class='bx bxl-facebook'></i></a>
+                            <a href="#" class="social-icon"><i class='bx bxl-twitter'></i></a>
+                            <a href="#" class="social-icon"><i class='bx bxl-instagram'></i></a>
+                            <a href="#" class="social-icon"><i class='bx bxl-linkedin'></i></a>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-links">
+                        <div class="footer-group">
+                            <h4>Produkt</h4>
+                            <ul>
+                                <li><a href="#">Funkcje</a></li>
+                                <li><a href="#">Cennik</a></li>
+                                <li><a href="#">FAQ</a></li>
+                                <li><a href="#">Dla zespołów</a></li>
+                            </ul>
                         </div>
                         
-                        <!-- Orbit path (visible) -->
-                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full border border-[#8A5CFF]/30"></div>
+                        <div class="footer-group">
+                            <h4>Wsparcie</h4>
+                            <ul>
+                                <li><a href="#">Centrum pomocy</a></li>
+                                <li><a href="#">Dokumentacja</a></li>
+                                <li><a href="#">Status</a></li>
+                                <li><a href="#">Kontakt</a></li>
+                            </ul>
+                        </div>
                         
-                        <!-- Orbiting elements -->
-                        <div class="orbit-element bg-[#614AD3] p-3 rounded-full absolute shadow-md shadow-[#614AD3]/30" style="top: 10%; left: 50%; transform: translateX(-50%)">
-                            <i class='bx bx-calendar text-xl'></i>
-                        </div>
-                        <div class="orbit-element bg-[#614AD3] p-3 rounded-full absolute shadow-md shadow-[#614AD3]/30" style="top: 50%; left: 10%; transform: translateY(-50%)">
-                            <i class='bx bx-line-chart text-xl'></i>
-                        </div>
-                        <div class="orbit-element bg-[#614AD3] p-3 rounded-full absolute shadow-md shadow-[#614AD3]/30" style="top: 50%; right: 10%; transform: translateY(-50%)">
-                            <i class='bx bx-list-check text-xl'></i>
-                        </div>
-                        <div class="orbit-element bg-[#614AD3] p-3 rounded-full absolute shadow-md shadow-[#614AD3]/30" style="bottom: 10%; left: 50%; transform: translateX(-50%)">
-                            <i class='bx bx-bell text-xl'></i>
+                        <div class="footer-group">
+                            <h4>Firma</h4>
+                            <ul>
+                                <li><a href="#">O nas</a></li>
+                                <li><a href="#">Blog</a></li>
+                                <li><a href="#">Kariera</a></li>
+                                <li><a href="#">Prywatność</a></li>
+                            </ul>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Tooltips -->
-                <div class="tooltip absolute top-10 right-20 bg-[#1A1A2E] px-4 py-2 rounded-lg shadow-lg">
-                    <p class="text-sm">Produktywność</p>
-                    <p class="text-[#8A5CFF] font-bold">+91% w tym tygodniu</p>
-                </div>
-                
-                <div class="tooltip absolute bottom-10 right-10 bg-[#1A1A2E] px-4 py-2 rounded-lg shadow-lg">
-                    <p class="text-sm">Czas zaoszczędzony</p>
-                    <p class="text-[#8A5CFF] font-bold">5.9 godzin dzisiaj</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="px-6 md:px-16 py-16 bg-[#0A0A15]">
-        <h2 class="text-3xl font-bold text-center mb-16">Główne funkcjonalności</h2>
-        
-        <div class="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            <!-- Feature 1 -->
-            <div class="feature-card bg-[#1A1A2E] p-8 rounded-xl hover:shadow-lg hover:shadow-[#8A5CFF]/10 transition-all">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-12 h-12 bg-[#8A5CFF]/20 rounded-full flex items-center justify-center">
-                        <i class='bx bx-calendar-check text-[#8A5CFF] text-2xl'></i>
+                <div class="footer-bottom">
+                    <div class="copyright">© 2023 TimeManager. Wszelkie prawa zastrzeżone.</div>
+                    <div class="footer-legal">
+                        <a href="#">Warunki korzystania</a>
+                        <a href="#">Polityka prywatności</a>
+                        <a href="#">Ciasteczka</a>
                     </div>
-                    <h3 class="text-xl font-semibold">Planowanie zadań</h3>
-                </div>
-                <p class="text-gray-300">
-                    Twórz plany dnia, tygodnia lub miesiąca w przejrzysty sposób. Oznaczaj priorytety i integruj je z roadmapami.
-                </p>
-            </div>
-            
-            <!-- Feature 2 -->
-            <div class="feature-card bg-[#1A1A2E] p-8 rounded-xl hover:shadow-lg hover:shadow-[#8A5CFF]/10 transition-all">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-12 h-12 bg-[#8A5CFF]/20 rounded-full flex items-center justify-center">
-                        <i class='bx bx-git-branch text-[#8A5CFF] text-2xl'></i>
-                    </div>
-                    <h3 class="text-xl font-semibold">Kreator roadmap</h3>
-                </div>
-                <p class="text-gray-300">
-                    Buduj ścieżki do celu w stylu roadmap. Przeciągaj i upuszczaj etapy, dodawaj opisy, terminy i śledź postęp.
-                </p>
-            </div>
-            
-            <!-- Feature 3 -->
-            <div class="feature-card bg-[#1A1A2E] p-8 rounded-xl hover:shadow-lg hover:shadow-[#8A5CFF]/10 transition-all">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-12 h-12 bg-[#8A5CFF]/20 rounded-full flex items-center justify-center">
-                        <i class='bx bx-line-chart text-[#8A5CFF] text-2xl'></i>
-                    </div>
-                    <h3 class="text-xl font-semibold">Dashboard produktywności</h3>
-                </div>
-                <p class="text-gray-300">
-                    Sprawdzaj statystyki efektywności. Śledź czas pracy, liczbę zrealizowanych zadań i czas skupienia.
-                </p>
-            </div>
-            
-            <!-- Feature 4 -->
-            <div class="feature-card bg-[#1A1A2E] p-8 rounded-xl hover:shadow-lg hover:shadow-[#8A5CFF]/10 transition-all">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-12 h-12 bg-[#8A5CFF]/20 rounded-full flex items-center justify-center">
-                        <i class='bx bxs-file-pdf text-[#8A5CFF] text-2xl'></i>
-                    </div>
-                    <h3 class="text-xl font-semibold">Eksport wyników</h3>
-                </div>
-                <p class="text-gray-300">
-                    W łatwy sposób eksportuj swoje plany, podsumowania i statystyki do formatu PDF, by dzielić się nimi lub drukować.
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="px-6 md:px-16 py-20 text-center relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-[#8A5CFF]/5 to-transparent opacity-70 z-0"></div>
-        <div class="relative z-10 max-w-4xl mx-auto">
-            <h2 class="text-3xl md:text-4xl font-bold mb-6">Zacznij organizować swój czas mądrzej już dziś!</h2>
-            <button class="px-8 py-4 bg-gradient-to-r from-[#8A5CFF] to-[#614AD3] rounded-full text-white hover:opacity-90 transition-all shadow-lg shadow-[#8A5CFF]/30 font-medium text-lg">
-                Załóż konto za darmo
-            </button>
-            <p class="mt-6 text-gray-300">Ponad 1,200 użytkowników każdego dnia</p>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="px-6 md:px-16 py-12 bg-[#0A0A15] mt-auto">
-        <div class="max-w-6xl mx-auto">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class='bx bx-time text-[#8A5CFF] text-3xl'></i>
-                        <span class="text-xl font-bold text-white">TimeManager</span>
-                    </div>
-                    <p class="text-gray-400">Twoje narzędzie do zarządzania czasem i produktywnością.</p>
-                </div>
-                
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Produkt</h4>
-                    <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Funkcje</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Cennik</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Dlaczego My?</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Pomoc</h4>
-                    <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Kontakt</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Wsparcie</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Dokumentacja</a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Dokumenty</h4>
-                    <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Polityka prywatności</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Regulamin</a></li>
-                    </ul>
                 </div>
             </div>
-            
-            <div class="mt-8 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-400">© 2023 TimeManager. Wszelkie prawa zastrzeżone.</p>
-                <div class="flex gap-4 mt-4 md:mt-0">
-                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                        <i class='bx bxl-instagram text-xl'></i>
-                    </a>
-                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                        <i class='bx bxl-linkedin text-xl'></i>
-                    </a>
-                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                        <i class='bx bxl-github text-xl'></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <script src="script.js"></script>
+        </footer>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="main.js"></script>
 </body>
 </html> 
