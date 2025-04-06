@@ -25,6 +25,7 @@ import {
 // Importujemy komponent widoku zadań i checklisty
 import TasksView from './TasksView';
 import ChecklistView from './ChecklistView';
+import SettingsView from './SettingsView';
 
 const Dashboard = ({ initialView = 'home' }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -139,6 +140,12 @@ const Dashboard = ({ initialView = 'home' }) => {
         return <TasksView />;
       case 'checklist':
         return <ChecklistView selectedTaskId={selectedTaskId} />;
+      case 'settings':
+        return <SettingsView />;
+      case 'roadmap':
+        // Przekierowanie do strony RoadmapCreator
+        window.location.href = '/roadmap-creator';
+        return null;
       case 'home':
       default:
         return renderHomeView();
