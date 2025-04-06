@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus,
   Filter,
@@ -15,6 +15,8 @@ import {
   ArrowUpDown,
   CheckSquare,
   X,
+  AlertCircle,
+  PlayCircle,
 } from 'lucide-react';
 
 const TasksView = () => {
@@ -24,17 +26,25 @@ const TasksView = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedSort, setSelectedSort] = useState('deadline');
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTaskId, setDeleteTaskId] = useState(null);
+  const [taskMenuOpen, setTaskMenuOpen] = useState(null);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
     deadline: new Date().toISOString().split('T')[0],
     priority: 'Średni',
     tags: '',
+    status: 'to-do',
   });
   
   const filterRef = useRef(null);
   const sortRef = useRef(null);
   const modalRef = useRef(null);
+  const deleteModalRef = useRef(null);
+  const taskMenuRef = useRef(null);
 
   // Hook zamykający menu po kliknięciu na zewnątrz
   useEffect(() => {
@@ -48,13 +58,19 @@ const TasksView = () => {
       if (modalRef.current && !modalRef.current.contains(event.target) && showTaskModal) {
         setShowTaskModal(false);
       }
+      if (deleteModalRef.current && !deleteModalRef.current.contains(event.target) && showDeleteModal) {
+        setShowDeleteModal(false);
+      }
+      if (taskMenuRef.current && !taskMenuRef.current.contains(event.target)) {
+        setTaskMenuOpen(null);
+      }
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [showTaskModal]);
+  }, [showTaskModal, showDeleteModal, taskMenuOpen]);
 
   // Funkcja obsługująca wybór filtra
   const handleFilterSelect = (filter) => {
@@ -77,8 +93,42 @@ const TasksView = () => {
     });
   };
 
-  // Funkcja dodająca nowe zadanie
-  const addNewTask = () => {
+  // Funkcja otwierająca modal w trybie dodawania
+  const openAddTaskModal = () => {
+    setNewTask({
+      title: '',
+      description: '',
+      deadline: new Date().toISOString().split('T')[0],
+      priority: 'Średni',
+      tags: '',
+      status: 'to-do',
+    });
+    setIsEditMode(false);
+    setEditingTaskId(null);
+    setShowTaskModal(true);
+  };
+
+  // Funkcja otwierająca modal w trybie edycji
+  const openEditTaskModal = (taskId) => {
+    const taskToEdit = tasks.find(task => task.id === taskId);
+    if (taskToEdit) {
+      setNewTask({
+        title: taskToEdit.title,
+        description: taskToEdit.description,
+        deadline: taskToEdit.deadline,
+        priority: taskToEdit.priority,
+        tags: taskToEdit.tags.join(', '),
+        status: taskToEdit.status,
+      });
+      setIsEditMode(true);
+      setEditingTaskId(taskId);
+      setShowTaskModal(true);
+      setTaskMenuOpen(null);
+    }
+  };
+
+  // Funkcja dodająca/edytująca zadanie
+  const saveTask = () => {
     // Walidacja
     if (!newTask.title.trim()) {
       alert('Proszę podać tytuł zadania');
@@ -89,28 +139,98 @@ const TasksView = () => {
       .map(tag => tag.trim())
       .filter(tag => tag !== '');
 
-    const newTaskObj = {
-      id: tasks.length > 0 ? Math.max(...tasks.map(task => task.id)) + 1 : 1,
-      title: newTask.title,
-      description: newTask.description,
-      deadline: newTask.deadline,
-      priority: newTask.priority,
-      status: 'to-do',
-      tags: tagsArray,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-
-    setTasks([...tasks, newTaskObj]);
+    if (isEditMode && editingTaskId) {
+      // Tryb edycji
+      setTasks(tasks.map(task => {
+        if (task.id === editingTaskId) {
+          return { 
+            ...task,
+            title: newTask.title,
+            description: newTask.description,
+            deadline: newTask.deadline,
+            priority: newTask.priority,
+            tags: tagsArray,
+            status: newTask.status,
+          };
+        }
+        return task;
+      }));
+    } else {
+      // Tryb dodawania
+      const newTaskObj = {
+        id: tasks.length > 0 ? Math.max(...tasks.map(task => task.id)) + 1 : 1,
+        title: newTask.title,
+        description: newTask.description,
+        deadline: newTask.deadline,
+        priority: newTask.priority,
+        status: newTask.status,
+        tags: tagsArray,
+        createdAt: new Date().toISOString().split('T')[0],
+      };
+      setTasks([...tasks, newTaskObj]);
+    }
     
     // Reset formularza i zamknięcie modala
+    resetTaskForm();
+  };
+
+  // Funkcja resetująca formularz i zamykająca modal
+  const resetTaskForm = () => {
     setNewTask({
       title: '',
       description: '',
       deadline: new Date().toISOString().split('T')[0],
       priority: 'Średni',
       tags: '',
+      status: 'to-do',
     });
+    setIsEditMode(false);
+    setEditingTaskId(null);
     setShowTaskModal(false);
+  };
+
+  // Funkcja inicjująca usuwanie zadania
+  const initiateDeleteTask = (taskId) => {
+    setDeleteTaskId(taskId);
+    setShowDeleteModal(true);
+    setTaskMenuOpen(null);
+  };
+
+  // Funkcja usuwająca zadanie
+  const deleteTask = () => {
+    if (deleteTaskId) {
+      setTasks(tasks.filter(task => task.id !== deleteTaskId));
+      setShowDeleteModal(false);
+      setDeleteTaskId(null);
+    }
+  };
+
+  // Funkcja zmieniająca status zadania
+  const changeTaskStatus = (taskId, newStatus) => {
+    setTasks(tasks.map(task => {
+      if (task.id === taskId) {
+        const updatedTask = { 
+          ...task, 
+          status: newStatus,
+        };
+        
+        // Dodaj datę ukończenia, jeśli zadanie jest oznaczone jako ukończone
+        if (newStatus === 'completed') {
+          updatedTask.completedAt = new Date().toISOString().split('T')[0];
+        } else if (task.status === 'completed') {
+          updatedTask.completedAt = null;
+        }
+        
+        return updatedTask;
+      }
+      return task;
+    }));
+    setTaskMenuOpen(null);
+  };
+
+  // Funkcja przełączająca menu zadania
+  const toggleTaskMenu = (taskId) => {
+    setTaskMenuOpen(taskMenuOpen === taskId ? null : taskId);
   };
 
   // Przykładowe dane zadań
@@ -228,21 +348,6 @@ const TasksView = () => {
     return 0;
   });
 
-  // Funkcje obsługujące zadania
-  const toggleTaskStatus = (id) => {
-    setTasks(tasks.map(task => {
-      if (task.id === id) {
-        const newStatus = task.status === 'completed' ? 'to-do' : 'completed';
-        return { 
-          ...task, 
-          status: newStatus,
-          completedAt: newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null
-        };
-      }
-      return task;
-    }));
-  };
-
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'Krytyczny': return 'text-red-500 bg-red-500/10';
@@ -272,7 +377,7 @@ const TasksView = () => {
           className="flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => setShowTaskModal(true)}
+          onClick={openAddTaskModal}
         >
           <Plus size={18} className="mr-2" />
           <span>Nowe zadanie</span>
@@ -350,7 +455,10 @@ const TasksView = () => {
                 <div className="flex items-start">
                   <button 
                     className="flex-shrink-0 mt-1"
-                    onClick={() => toggleTaskStatus(task.id)}
+                    onClick={() => 
+                      task.status === 'completed' 
+                        ? changeTaskStatus(task.id, 'to-do') 
+                        : changeTaskStatus(task.id, 'completed')}
                   >
                     {task.status === 'completed' ? (
                       <CheckCircle2 size={22} className="text-green-500" />
@@ -364,10 +472,68 @@ const TasksView = () => {
                       <h3 className={`text-lg font-medium ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-white'}`}>
                         {task.title}
                       </h3>
-                      <div className="flex-shrink-0 relative">
-                        <button className="text-gray-400 hover:text-white p-1 rounded-full">
+                      <div className="flex-shrink-0 relative" ref={taskMenuOpen === task.id ? taskMenuRef : null}>
+                        <button 
+                          className="text-gray-400 hover:text-white p-1 rounded-full"
+                          onClick={() => toggleTaskMenu(task.id)}
+                        >
                           <MoreVertical size={18} />
                         </button>
+                        
+                        {/* Menu opcji dla zadania */}
+                        {taskMenuOpen === task.id && (
+                          <div className="absolute right-0 mt-2 w-48 bg-dark-200 rounded-lg shadow-xl border border-dark-100 z-50">
+                            <div className="py-1">
+                              {/* Opcje zmiany statusu */}
+                              {task.status !== 'to-do' && (
+                                <button 
+                                  className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
+                                  onClick={() => changeTaskStatus(task.id, 'to-do')}
+                                >
+                                  <Circle size={16} className="mr-2 text-gray-400" />
+                                  <span>Do zrobienia</span>
+                                </button>
+                              )}
+                              {task.status !== 'in-progress' && (
+                                <button 
+                                  className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
+                                  onClick={() => changeTaskStatus(task.id, 'in-progress')}
+                                >
+                                  <PlayCircle size={16} className="mr-2 text-blue-400" />
+                                  <span>W trakcie</span>
+                                </button>
+                              )}
+                              {task.status !== 'completed' && (
+                                <button 
+                                  className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
+                                  onClick={() => changeTaskStatus(task.id, 'completed')}
+                                >
+                                  <CheckCircle2 size={16} className="mr-2 text-green-500" />
+                                  <span>Ukończone</span>
+                                </button>
+                              )}
+                              
+                              {/* Separator */}
+                              <div className="border-t border-dark-100 my-1"></div>
+                              
+                              {/* Opcje edycji i usuwania */}
+                              <button 
+                                className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
+                                onClick={() => openEditTaskModal(task.id)}
+                              >
+                                <Edit size={16} className="mr-2 text-primary" />
+                                <span>Edytuj</span>
+                              </button>
+                              <button 
+                                className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
+                                onClick={() => initiateDeleteTask(task.id)}
+                              >
+                                <Trash2 size={16} className="mr-2 text-red-500" />
+                                <span>Usuń</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -397,6 +563,13 @@ const TasksView = () => {
                         <div className={`text-xs px-2 py-1 rounded-md ${getPriorityColor(task.priority)}`}>
                           {task.priority}
                         </div>
+                        
+                        {/* Status zadania */}
+                        {task.status === 'in-progress' && (
+                          <div className="text-xs px-2 py-1 rounded-md bg-blue-500/10 text-blue-400">
+                            W trakcie
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex space-x-2 mt-2 sm:mt-0">
@@ -404,6 +577,7 @@ const TasksView = () => {
                           className="p-1.5 bg-dark-200 hover:bg-dark-100 rounded-full text-gray-400 hover:text-primary"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
+                          onClick={() => openEditTaskModal(task.id)}
                         >
                           <Edit size={16} />
                         </motion.button>
@@ -411,6 +585,7 @@ const TasksView = () => {
                           className="p-1.5 bg-dark-200 hover:bg-dark-100 rounded-full text-gray-400 hover:text-red-500"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
+                          onClick={() => initiateDeleteTask(task.id)}
                         >
                           <Trash2 size={16} />
                         </motion.button>
@@ -440,7 +615,7 @@ const TasksView = () => {
         )}
       </div>
 
-      {/* Modal dodawania nowego zadania */}
+      {/* Modal dodawania/edycji zadania */}
       {showTaskModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
           <motion.div
@@ -451,10 +626,12 @@ const TasksView = () => {
             transition={{ duration: 0.2 }}
           >
             <div className="flex justify-between items-center border-b border-dark-200 p-4">
-              <h2 className="text-xl font-bold text-white">Nowe zadanie</h2>
+              <h2 className="text-xl font-bold text-white">
+                {isEditMode ? 'Edytuj zadanie' : 'Nowe zadanie'}
+              </h2>
               <button 
                 className="text-gray-400 hover:text-white rounded-full p-1"
-                onClick={() => setShowTaskModal(false)}
+                onClick={resetTaskForm}
               >
                 <X size={20} />
               </button>
@@ -531,12 +708,27 @@ const TasksView = () => {
                     onChange={handleInputChange}
                   />
                 </div>
+
+                <div>
+                  <label htmlFor="status" className="block text-sm font-medium text-gray-300 mb-1">Status</label>
+                  <select
+                    id="status"
+                    name="status"
+                    className="w-full bg-dark-200 border border-dark-100 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    value={newTask.status}
+                    onChange={handleInputChange}
+                  >
+                    <option value="to-do">Do zrobienia</option>
+                    <option value="in-progress">W trakcie</option>
+                    <option value="completed">Ukończone</option>
+                  </select>
+                </div>
               </div>
               
               <div className="mt-6 flex gap-3 justify-end">
                 <button
                   className="px-4 py-2 bg-dark-200 hover:bg-dark-100 text-white rounded-lg"
-                  onClick={() => setShowTaskModal(false)}
+                  onClick={resetTaskForm}
                 >
                   Anuluj
                 </button>
@@ -544,9 +736,58 @@ const TasksView = () => {
                   className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={addNewTask}
+                  onClick={saveTask}
                 >
-                  Dodaj zadanie
+                  {isEditMode ? 'Zapisz zmiany' : 'Dodaj zadanie'}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal potwierdzenia usunięcia */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
+          <motion.div
+            ref={deleteModalRef}
+            className="bg-dark-100 rounded-xl border border-dark-100/80 shadow-2xl w-full max-w-md overflow-hidden"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="flex justify-between items-center border-b border-dark-200 p-4">
+              <h2 className="text-xl font-bold text-white flex items-center">
+                <AlertCircle size={20} className="text-red-500 mr-2" />
+                Potwierdź usunięcie
+              </h2>
+              <button 
+                className="text-gray-400 hover:text-white rounded-full p-1"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <p className="text-gray-300 mb-4">
+                Czy na pewno chcesz usunąć to zadanie? Tej operacji nie można cofnąć.
+              </p>
+              
+              <div className="flex gap-3 justify-end">
+                <button
+                  className="px-4 py-2 bg-dark-200 hover:bg-dark-100 text-white rounded-lg"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Anuluj
+                </button>
+                <motion.button
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={deleteTask}
+                >
+                  Usuń zadanie
                 </motion.button>
               </div>
             </div>

@@ -1,0 +1,746 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { 
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  CheckCircle2,
+  Circle,
+  CheckSquare,
+  X,
+  AlertCircle,
+  Link2,
+  Calendar,
+  Filter,
+  Clock,
+  ListChecks,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronUp,
+  ArrowDown,
+  ArrowUp,
+  Pencil,
+  GripVertical
+} from 'lucide-react';
+
+const ChecklistView = () => {
+  // Stany
+  const [searchValue, setSearchValue] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [showListModal, setShowListModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [currentList, setCurrentList] = useState(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [newListTitle, setNewListTitle] = useState('');
+  const [newItemText, setNewItemText] = useState('');
+  const [deleteListId, setDeleteListId] = useState(null);
+  
+  // Referencje
+  const modalRef = useRef(null);
+  const deleteModalRef = useRef(null);
+  const titleInputRef = useRef(null);
+  const newItemInputRef = useRef(null);
+
+  // Hook zamykający menu i modalne okna po kliknięciu na zewnątrz
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target) && showListModal) {
+        // Nie zamykamy modalu przy kliknięciu na zewnątrz, aby uniknąć przypadkowej utraty danych
+        // Użytkownik musi kliknąć przycisk Zamknij
+      }
+      if (deleteModalRef.current && !deleteModalRef.current.contains(event.target) && showDeleteModal) {
+        setShowDeleteModal(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [showListModal, showDeleteModal]);
+
+  // Focus na polu wprowadzania tytułu po otwarciu edycji
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  }, [isEditingTitle]);
+
+  // Autofocus na nowym polu po otwarciu modala
+  useEffect(() => {
+    if (showListModal && newItemInputRef.current && !currentList?.items.length) {
+      setTimeout(() => {
+        newItemInputRef.current.focus();
+      }, 300);
+    }
+  }, [showListModal, currentList]);
+
+  // Przykładowe dane zadań
+  const [tasks] = useState([
+    { 
+      id: 1, 
+      title: 'Przygotowanie prezentacji dla klienta', 
+      deadline: '2023-12-01', 
+      priority: 'Wysoki', 
+      status: 'in-progress',
+    },
+    { 
+      id: 2, 
+      title: 'Analiza danych z ostatniego kwartału', 
+      deadline: '2023-11-30', 
+      priority: 'Średni', 
+      status: 'to-do',
+    },
+    { 
+      id: 3, 
+      title: 'Aktualizacja dokumentacji projektu', 
+      deadline: '2023-11-25', 
+      priority: 'Niski', 
+      status: 'to-do',
+    },
+    { 
+      id: 4, 
+      title: 'Poprawa błędów w aplikacji', 
+      deadline: '2023-11-20', 
+      priority: 'Krytyczny', 
+      status: 'in-progress',
+    },
+  ]);
+
+  // Przykładowe dane list checklisty
+  const [checklistLists, setChecklistLists] = useState([
+    {
+      id: 1,
+      title: 'Do zrobienia na dziś',
+      createdAt: '2023-11-05',
+      updatedAt: '2023-11-07',
+      taskId: null,
+      items: [
+        { id: 1, text: 'Spotkanie zespołu o 10:00', completed: true },
+        { id: 2, text: 'Przejrzeć raporty sprzedażowe', completed: false },
+        { id: 3, text: 'Dokończyć prezentację dla klienta', completed: false },
+        { id: 4, text: 'Odpowiedzieć na emaile', completed: true },
+      ]
+    },
+    {
+      id: 2,
+      title: 'Lista zakupów',
+      createdAt: '2023-11-10',
+      updatedAt: '2023-11-10',
+      taskId: null,
+      items: [
+        { id: 1, text: 'Mleko', completed: false },
+        { id: 2, text: 'Chleb', completed: false },
+        { id: 3, text: 'Owoce', completed: false },
+        { id: 4, text: 'Warzywa', completed: true },
+      ]
+    },
+    {
+      id: 3,
+      title: 'Plan pracy nad prezentacją',
+      createdAt: '2023-11-12',
+      updatedAt: '2023-11-14',
+      taskId: 1,
+      items: [
+        { id: 1, text: 'Przygotować outline prezentacji', completed: true },
+        { id: 2, text: 'Zebrać dane do wykresów', completed: true },
+        { id: 3, text: 'Zaprojektować slajdy', completed: false },
+        { id: 4, text: 'Przygotować notki dla prezentera', completed: false },
+        { id: 5, text: 'Przeprowadzić próbną prezentację', completed: false },
+      ]
+    },
+    {
+      id: 4,
+      title: 'Plan aktualizacji dokumentacji',
+      createdAt: '2023-11-15',
+      updatedAt: '2023-11-15',
+      taskId: 3,
+      items: [
+        { id: 1, text: 'Zaktualizować diagramy architektury', completed: false },
+        { id: 2, text: 'Opisać nowe endpointy API', completed: false },
+        { id: 3, text: 'Uzupełnić dokumentację użytkownika', completed: false },
+      ]
+    },
+  ]);
+
+  // Filtracja list checklisty
+  const filteredLists = checklistLists.filter(list => {
+    // Filtrowanie według przypisania do zadania
+    if (selectedFilter === 'assigned' && list.taskId === null) return false;
+    if (selectedFilter === 'unassigned' && list.taskId !== null) return false;
+    
+    // Filtrowanie według wyszukiwania
+    if (searchValue && !list.title.toLowerCase().includes(searchValue.toLowerCase()) && 
+        !list.items.some(item => item.text.toLowerCase().includes(searchValue.toLowerCase()))) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  // Formatowanie daty
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pl-PL', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
+  };
+
+  // Tworzenie nowej pustej listy
+  const createNewList = () => {
+    const newList = {
+      id: checklistLists.length > 0 ? Math.max(...checklistLists.map(list => list.id)) + 1 : 1,
+      title: 'Nowa lista',
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0],
+      taskId: null,
+      items: []
+    };
+    
+    setCurrentList(newList);
+    setIsEditingTitle(true);
+    setNewListTitle('Nowa lista');
+    setShowListModal(true);
+  };
+
+  // Otwieranie istniejącej listy
+  const openList = (list) => {
+    setCurrentList({...list, items: [...list.items]});
+    setShowListModal(true);
+    setIsEditingTitle(false);
+    setNewListTitle(list.title);
+  };
+
+  // Zapisywanie listy
+  const saveList = () => {
+    const listToSave = {
+      ...currentList,
+      title: newListTitle || 'Nowa lista',
+      updatedAt: new Date().toISOString().split('T')[0]
+    };
+
+    if (checklistLists.some(list => list.id === listToSave.id)) {
+      // Aktualizacja istniejącej listy
+      setChecklistLists(checklistLists.map(list => 
+        list.id === listToSave.id ? listToSave : list
+      ));
+    } else {
+      // Dodanie nowej listy
+      setChecklistLists([...checklistLists, listToSave]);
+    }
+
+    closeListModal();
+  };
+
+  // Zamykanie modalu listy
+  const closeListModal = () => {
+    setShowListModal(false);
+    setCurrentList(null);
+    setNewItemText('');
+    setIsEditingTitle(false);
+  };
+
+  // Inicjowanie usuwania listy
+  const initiateDeleteList = (listId) => {
+    setDeleteListId(listId);
+    setShowDeleteModal(true);
+  };
+
+  // Usuwanie listy
+  const deleteList = () => {
+    if (deleteListId) {
+      setChecklistLists(checklistLists.filter(list => list.id !== deleteListId));
+      setShowDeleteModal(false);
+      setDeleteListId(null);
+      
+      if (currentList && currentList.id === deleteListId) {
+        closeListModal();
+      }
+    }
+  };
+
+  // Dodawanie nowego elementu do listy
+  const addNewItem = () => {
+    if (!newItemText.trim()) return;
+    
+    const newItem = {
+      id: currentList.items.length > 0 ? Math.max(...currentList.items.map(item => item.id)) + 1 : 1,
+      text: newItemText,
+      completed: false
+    };
+    
+    setCurrentList({
+      ...currentList,
+      items: [...currentList.items, newItem],
+      updatedAt: new Date().toISOString().split('T')[0]
+    });
+    
+    setNewItemText('');
+    
+    if (newItemInputRef.current) {
+      newItemInputRef.current.focus();
+    }
+  };
+
+  // Usuwanie elementu z listy
+  const removeItemFromList = (itemId) => {
+    setCurrentList({
+      ...currentList,
+      items: currentList.items.filter(item => item.id !== itemId),
+      updatedAt: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  // Przełączanie stanu ukończenia elementu
+  const toggleItemCompletion = (itemId) => {
+    setCurrentList({
+      ...currentList,
+      items: currentList.items.map(item => 
+        item.id === itemId ? {...item, completed: !item.completed} : item
+      ),
+      updatedAt: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  // Aktualizacja kolejności elementów
+  const updateItemsOrder = (newOrder) => {
+    setCurrentList({
+      ...currentList,
+      items: newOrder,
+      updatedAt: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  // Edycja tekstu elementu
+  const updateItemText = (itemId, newText) => {
+    if (!newText.trim()) return;
+    
+    setCurrentList({
+      ...currentList,
+      items: currentList.items.map(item => 
+        item.id === itemId ? {...item, text: newText} : item
+      ),
+      updatedAt: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  // Przypisywanie listy do zadania
+  const assignListToTask = (taskId) => {
+    setCurrentList({
+      ...currentList,
+      taskId: taskId === 'none' ? null : parseInt(taskId),
+      updatedAt: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  // Liczba ukończonych elementów w liście
+  const getCompletedItemsCount = (list) => {
+    return list.items.filter(item => item.completed).length;
+  };
+
+  // Wyświetlanie postępu listy
+  const getListProgress = (list) => {
+    if (list.items.length === 0) return 0;
+    return Math.round((getCompletedItemsCount(list) / list.items.length) * 100);
+  };
+
+  // Pobieranie powiązanego zadania
+  const getRelatedTask = (taskId) => {
+    if (!taskId) return null;
+    return tasks.find(task => task.id === taskId);
+  };
+
+  // Obsługa klawisza Enter w polu nowego elementu
+  const handleNewItemKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addNewItem();
+    }
+  };
+
+  // Obsługa klawisza Enter w polu tytułu
+  const handleTitleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      setIsEditingTitle(false);
+    }
+  };
+
+  // Renderowanie kafelka listy
+  const renderListTile = (list) => {
+    const progress = getListProgress(list);
+    const relatedTask = getRelatedTask(list.taskId);
+    
+    return (
+      <motion.div
+        key={list.id}
+        className="bg-dark-200 rounded-lg border border-dark-200/90 shadow-lg overflow-hidden w-[275px] h-[200px] flex flex-col"
+        whileHover={{ y: -3, boxShadow: "0 8px 20px -5px rgba(0, 0, 0, 0.3)" }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2 }}
+        onClick={() => openList(list)}
+      >
+        <div className="p-3 flex-grow flex flex-col">
+          <div className="flex justify-between items-start">
+            <h3 className="font-medium text-white text-lg line-clamp-1">{list.title}</h3>
+            <button 
+              className="text-gray-400 hover:text-white p-1 rounded-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                initiateDeleteList(list.id);
+              }}
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+          
+          {relatedTask && (
+            <div className="mt-1 flex items-center text-xs text-primary/90">
+              <Link2 size={12} className="mr-1" />
+              <span className="truncate">{relatedTask.title}</span>
+            </div>
+          )}
+          
+          <div className="mt-2 flex-grow">
+            <ul className="text-sm text-gray-300 space-y-0.5 overflow-hidden max-h-[110px]">
+              {list.items.slice(0, 3).map((item, index) => (
+                <li key={index} className="flex items-start py-1">
+                  <span className="mr-2 mt-0.5 flex-shrink-0">
+                    {item.completed ? (
+                      <CheckCircle2 size={14} className="text-green-500" />
+                    ) : (
+                      <Circle size={14} className="text-gray-400" />
+                    )}
+                  </span>
+                  <span className={`truncate ${item.completed ? 'line-through text-gray-500' : ''}`}>
+                    {item.text}
+                  </span>
+                </li>
+              ))}
+              {list.items.length > 3 && (
+                <li className="text-gray-400 italic text-xs pt-1">
+                  ...i {list.items.length - 3} więcej
+                </li>
+              )}
+              {list.items.length === 0 && (
+                <li className="text-gray-400 italic py-1">
+                  Lista jest pusta
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+        
+        <div className="bg-dark-300 p-2 flex justify-between items-center">
+          <div className="text-xs text-gray-400">
+            {formatDate(list.updatedAt)}
+          </div>
+          
+          <div className="flex items-center">
+            <div className="text-xs text-gray-300 mr-2">
+              {getCompletedItemsCount(list)}/{list.items.length}
+            </div>
+            <div className="w-16 h-1.5 bg-dark-400 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Renderowanie komponentu
+  return (
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-white">Moje Listy</h1>
+        <div className="flex space-x-3">
+          <div className="relative">
+            <select
+              className="appearance-none bg-dark-200 hover:bg-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              value={selectedFilter}
+              onChange={(e) => setSelectedFilter(e.target.value)}
+            >
+              <option value="all">Wszystkie listy</option>
+              <option value="assigned">Przypisane do zadań</option>
+              <option value="unassigned">Osobiste</option>
+            </select>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter size={18} className="text-gray-400" />
+            </div>
+          </div>
+          
+          <motion.button
+            className="flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={createNewList}
+          >
+            <Plus size={18} className="mr-2" />
+            <span>Nowa lista</span>
+          </motion.button>
+        </div>
+      </div>
+
+      {/* Pasek wyszukiwania */}
+      <div className="bg-dark-100/50 backdrop-blur-sm rounded-xl border border-dark-100/80 shadow-lg p-4 mb-6">
+        <div className="relative w-full">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={18} className="text-gray-400" />
+          </div>
+          <input
+            type="text"
+            className="w-full bg-dark-200 border border-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+            placeholder="Szukaj list..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Lista kafelków */}
+      {filteredLists.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredLists.map(list => renderListTile(list))}
+        </div>
+      ) : (
+        <div className="text-center py-10">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-gray-400"
+          >
+            <div className="mb-4 flex justify-center">
+              <ListChecks size={48} className="text-gray-500" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-300 mb-1">Brak list</h3>
+            <p className="text-gray-400">
+              {searchValue ? "Nie znaleziono list pasujących do wyszukiwania" : "Dodaj nową listę, aby rozpocząć"}
+            </p>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal edytora listy */}
+      <AnimatePresence>
+        {showListModal && currentList && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
+            <motion.div
+              ref={modalRef}
+              className="bg-dark-100 rounded-xl border border-dark-100/80 shadow-2xl w-[800px] max-w-[90vw] max-h-[80vh] overflow-hidden flex flex-col"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Nagłówek modalu */}
+              <div className="flex justify-between items-center border-b border-dark-200 p-4">
+                {isEditingTitle ? (
+                  <input
+                    ref={titleInputRef}
+                    type="text"
+                    className="text-xl font-bold text-white bg-dark-200 border border-primary px-3 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 w-full max-w-[400px]"
+                    value={newListTitle}
+                    onChange={(e) => setNewListTitle(e.target.value)}
+                    onBlur={() => setIsEditingTitle(false)}
+                    onKeyDown={handleTitleKeyDown}
+                  />
+                ) : (
+                  <div className="flex items-center">
+                    <h2 className="text-xl font-bold text-white mr-2">{currentList.title}</h2>
+                    <button 
+                      className="text-gray-400 hover:text-white p-1 rounded-md"
+                      onClick={() => setIsEditingTitle(true)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </div>
+                )}
+                
+                <div className="flex items-center space-x-3">
+                  <div>
+                    <select
+                      className="appearance-none bg-dark-200 hover:bg-dark-100 text-white px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      value={currentList.taskId || 'none'}
+                      onChange={(e) => assignListToTask(e.target.value)}
+                    >
+                      <option value="none">Lista osobista</option>
+                      <optgroup label="Przypisz do zadania">
+                        {tasks.map(task => (
+                          <option key={task.id} value={task.id}>{task.title}</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </div>
+                  <button 
+                    className="text-gray-400 hover:text-red-500 p-1.5 bg-dark-200 rounded-md"
+                    onClick={() => initiateDeleteList(currentList.id)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <button 
+                    className="text-gray-400 hover:text-white p-1.5 bg-dark-200 rounded-md"
+                    onClick={closeListModal}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Zawartość modalu */}
+              <div className="flex-grow overflow-auto p-4">
+                {/* Drag and drop lista elementów */}
+                <Reorder.Group
+                  axis="y"
+                  values={currentList.items}
+                  onReorder={updateItemsOrder}
+                  className="space-y-2 mb-4"
+                >
+                  {currentList.items.map((item) => (
+                    <Reorder.Item 
+                      key={item.id} 
+                      value={item}
+                      className="bg-dark-200/70 rounded-md flex items-start p-3 border border-dark-100/50 group"
+                      dragListener={false} // Wyłączamy domyślny drag na całym elemencie
+                      layoutId={`item-${item.id}`}
+                    >
+                      <div className="cursor-move flex-shrink-0 mr-2 text-gray-500 hover:text-gray-300 mt-1 touch-none">
+                        <GripVertical size={16} />
+                      </div>
+                      
+                      <button 
+                        className="flex-shrink-0 mr-2 mt-1"
+                        onClick={() => toggleItemCompletion(item.id)}
+                      >
+                        {item.completed ? (
+                          <CheckCircle2 size={18} className="text-green-500" />
+                        ) : (
+                          <Circle size={18} className="text-gray-500" />
+                        )}
+                      </button>
+                      
+                      <div className="flex-grow">
+                        <input
+                          type="text"
+                          className={`w-full bg-transparent border-none p-0 focus:outline-none focus:ring-0 ${
+                            item.completed ? 'text-gray-400 line-through' : 'text-white'
+                          }`}
+                          value={item.text}
+                          onChange={(e) => updateItemText(item.id, e.target.value)}
+                        />
+                      </div>
+                      
+                      <button 
+                        className="flex-shrink-0 ml-2 text-transparent group-hover:text-gray-400 hover:text-red-500"
+                        onClick={() => removeItemFromList(item.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </Reorder.Item>
+                  ))}
+                </Reorder.Group>
+                
+                {/* Dodawanie nowego elementu */}
+                <div className="flex items-center bg-dark-200/30 border border-dark-100/30 rounded-md p-2">
+                  <div className="mr-2 text-gray-500">
+                    <Plus size={18} />
+                  </div>
+                  <input
+                    ref={newItemInputRef}
+                    type="text"
+                    className="flex-grow bg-transparent border-none p-1 focus:outline-none focus:ring-0 text-white placeholder-gray-500"
+                    placeholder="Dodaj nowy element..."
+                    value={newItemText}
+                    onChange={(e) => setNewItemText(e.target.value)}
+                    onKeyDown={handleNewItemKeyDown}
+                  />
+                  <button
+                    className="ml-2 px-3 py-1 bg-primary/80 hover:bg-primary text-white rounded-md text-sm"
+                    onClick={addNewItem}
+                  >
+                    Dodaj
+                  </button>
+                </div>
+              </div>
+              
+              {/* Stopka modalu */}
+              <div className="bg-dark-200/50 p-3 flex justify-between items-center border-t border-dark-200">
+                <div className="text-xs text-gray-400">
+                  Ostatnia edycja: {formatDate(currentList.updatedAt)}
+                </div>
+                
+                <button
+                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm"
+                  onClick={saveList}
+                >
+                  Zapisz zmiany
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal potwierdzenia usunięcia */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
+            <motion.div
+              ref={deleteModalRef}
+              className="bg-dark-100 rounded-xl border border-dark-100/80 shadow-2xl w-full max-w-md overflow-hidden"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex justify-between items-center border-b border-dark-200 p-4">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                  <AlertCircle size={20} className="text-red-500 mr-2" />
+                  Potwierdź usunięcie
+                </h2>
+                <button 
+                  className="text-gray-400 hover:text-white rounded-full p-1"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="p-4">
+                <p className="text-gray-300 mb-4">
+                  Czy na pewno chcesz usunąć tę listę? Wszystkie elementy zostaną trwale usunięte.
+                </p>
+                
+                <div className="flex gap-3 justify-end">
+                  <button
+                    className="px-4 py-2 bg-dark-200 hover:bg-dark-100 text-white rounded-lg"
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    Anuluj
+                  </button>
+                  <motion.button
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={deleteList}
+                  >
+                    Usuń listę
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default ChecklistView; 

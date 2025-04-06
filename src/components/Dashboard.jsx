@@ -19,10 +19,12 @@ import {
   AlertCircle,
   Timer,
   Users,
+  ListChecks,
 } from 'lucide-react';
 
-// Importujemy komponent widoku zadań
+// Importujemy komponent widoku zadań i checklisty
 import TasksView from './TasksView';
+import ChecklistView from './ChecklistView';
 
 const Dashboard = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -45,6 +47,7 @@ const Dashboard = () => {
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'tasks', icon: CheckSquare, label: 'Zadania' },
+    { id: 'checklist', icon: ListChecks, label: 'Lista To-Do' },
     { id: 'roadmap', icon: Map, label: 'Roadmapa' },
     { id: 'favorites', icon: Star, label: 'Ulubione' },
     { id: 'settings', icon: Settings, label: 'Ustawienia' },
@@ -119,6 +122,8 @@ const Dashboard = () => {
     switch (activeItem) {
       case 'tasks':
         return <TasksView />;
+      case 'checklist':
+        return <ChecklistView />;
       case 'home':
       default:
         return renderHomeView();
