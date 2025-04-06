@@ -21,13 +21,14 @@ import {
   ArrowDown,
   ArrowUp,
   Pencil,
-  GripVertical
+  GripVertical,
+  ArrowLeft
 } from 'lucide-react';
 
-const ChecklistView = () => {
+const ChecklistView = ({ selectedTaskId = null }) => {
   // Stany
   const [searchValue, setSearchValue] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedFilter, setSelectedFilter] = useState(selectedTaskId ? 'assigned' : 'all');
   const [showListModal, setShowListModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [currentList, setCurrentList] = useState(null);
@@ -36,18 +37,30 @@ const ChecklistView = () => {
   const [newItemText, setNewItemText] = useState('');
   const [deleteListId, setDeleteListId] = useState(null);
   
+  // Do zarządzania widokiem zadania używamy jednego stanu z wyraźnie określonym typem
+  const [activeTaskId, setActiveTaskId] = useState(
+    selectedTaskId ? Number(selectedTaskId) : null
+  );
+  
   // Referencje
   const modalRef = useRef(null);
   const deleteModalRef = useRef(null);
   const titleInputRef = useRef(null);
   const newItemInputRef = useRef(null);
 
+  // Inicjalizacja stanu na podstawie przekazanego id zadania
+  useEffect(() => {
+    if (selectedTaskId) {
+      setActiveTaskId(Number(selectedTaskId));
+      setSelectedFilter('assigned');
+    }
+  }, [selectedTaskId]);
+
   // Hook zamykający menu i modalne okna po kliknięciu na zewnątrz
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target) && showListModal) {
-        // Nie zamykamy modalu przy kliknięciu na zewnątrz, aby uniknąć przypadkowej utraty danych
-        // Użytkownik musi kliknąć przycisk Zamknij
+        // Nie zamykamy modalu przy kliknięciu na zewnątrz
       }
       if (deleteModalRef.current && !deleteModalRef.current.contains(event.target) && showDeleteModal) {
         setShowDeleteModal(false);
@@ -164,20 +177,41 @@ const ChecklistView = () => {
     },
   ]);
 
-  // Filtracja list checklisty
-  const filteredLists = checklistLists.filter(list => {
-    // Filtrowanie według przypisania do zadania
-    if (selectedFilter === 'assigned' && list.taskId === null) return false;
-    if (selectedFilter === 'unassigned' && list.taskId !== null) return false;
-    
-    // Filtrowanie według wyszukiwania
-    if (searchValue && !list.title.toLowerCase().includes(searchValue.toLowerCase()) && 
-        !list.items.some(item => item.text.toLowerCase().includes(searchValue.toLowerCase()))) {
-      return false;
+  // Pomocnik: konwersja taskId do liczby lub null
+  const normalizeTaskId = (id) => {
+    return id === null || id === undefined || id === 'null' ? null : Number(id);
+  };
+
+  // Filtrowanie list
+  const getFilteredLists = () => {
+    // Jeśli aktywne jest zadanie, pokazujemy tylko jego listy
+    if (activeTaskId !== null) {
+      return checklistLists.filter(list => {
+        const listTaskId = normalizeTaskId(list.taskId);
+        return listTaskId === activeTaskId;
+      });
     }
     
-    return true;
-  });
+    // W przeciwnym razie filtrujemy według wybranych filtrów
+    return checklistLists.filter(list => {
+      const listTaskId = normalizeTaskId(list.taskId);
+      
+      // Filtrowanie według przypisania do zadania
+      if (selectedFilter === 'assigned' && listTaskId === null) return false;
+      if (selectedFilter === 'unassigned' && listTaskId !== null) return false;
+      
+      // Filtrowanie według wyszukiwania
+      if (searchValue && !list.title.toLowerCase().includes(searchValue.toLowerCase()) && 
+          !list.items.some(item => item.text.toLowerCase().includes(searchValue.toLowerCase()))) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+
+  // Pobranie przefiltrowanych list
+  const filteredLists = getFilteredLists();
 
   // Formatowanie daty
   const formatDate = (dateString) => {
@@ -190,20 +224,53 @@ const ChecklistView = () => {
   };
 
   // Tworzenie nowej pustej listy
-  const createNewList = () => {
+  const createNewList = (taskId = null) => {
+    const normalizedTaskId = normalizeTaskId(taskId);
+    let title = 'Nowa lista';
+    
+    if (normalizedTaskId !== null) {
+      const task = tasks.find(t => t.id === normalizedTaskId);
+      if (task) {
+        title = `Lista dla ${task.title}`;
+      }
+    }
+    
     const newList = {
       id: checklistLists.length > 0 ? Math.max(...checklistLists.map(list => list.id)) + 1 : 1,
-      title: 'Nowa lista',
+      title: title,
       createdAt: new Date().toISOString().split('T')[0],
       updatedAt: new Date().toISOString().split('T')[0],
-      taskId: null,
+      taskId: normalizedTaskId,
       items: []
     };
     
     setCurrentList(newList);
     setIsEditingTitle(true);
-    setNewListTitle('Nowa lista');
+    setNewListTitle(newList.title);
     setShowListModal(true);
+  };
+
+  // Pobieranie zadania po ID
+  const getTaskById = (taskId) => {
+    if (taskId === null) return null;
+    return tasks.find(task => task.id === Number(taskId));
+  };
+
+  // Pobieranie list dla zadania
+  const getListsForTask = (taskId) => {
+    if (taskId === null) return [];
+    const normalizedTaskId = Number(taskId);
+    return checklistLists.filter(list => normalizeTaskId(list.taskId) === normalizedTaskId);
+  };
+
+  // Przełączanie widoku na zadanie
+  const showTaskView = (taskId) => {
+    setActiveTaskId(Number(taskId));
+  };
+
+  // Powrót do widoku wszystkich list
+  const backToAllLists = () => {
+    setActiveTaskId(null);
   };
 
   // Otwieranie istniejącej listy
@@ -260,6 +327,15 @@ const ChecklistView = () => {
         closeListModal();
       }
     }
+  };
+
+  // Przypisywanie listy do zadania
+  const assignListToTask = (taskId) => {
+    setCurrentList({
+      ...currentList,
+      taskId: taskId === 'none' ? null : normalizeTaskId(taskId),
+      updatedAt: new Date().toISOString().split('T')[0]
+    });
   };
 
   // Dodawanie nowego elementu do listy
@@ -327,30 +403,23 @@ const ChecklistView = () => {
     });
   };
 
-  // Przypisywanie listy do zadania
-  const assignListToTask = (taskId) => {
-    setCurrentList({
-      ...currentList,
-      taskId: taskId === 'none' ? null : parseInt(taskId),
-      updatedAt: new Date().toISOString().split('T')[0]
-    });
-  };
-
-  // Liczba ukończonych elementów w liście
-  const getCompletedItemsCount = (list) => {
-    return list.items.filter(item => item.completed).length;
-  };
-
-  // Wyświetlanie postępu listy
-  const getListProgress = (list) => {
-    if (list.items.length === 0) return 0;
-    return Math.round((getCompletedItemsCount(list) / list.items.length) * 100);
-  };
-
   // Pobieranie powiązanego zadania
   const getRelatedTask = (taskId) => {
     if (!taskId) return null;
-    return tasks.find(task => task.id === taskId);
+    return tasks.find(task => task.id === Number(taskId));
+  };
+
+  // Funkcja licząca ukończone elementy w liście
+  const getCompletedItemsCount = (list) => {
+    if (!list || !list.items || list.items.length === 0) return 0;
+    return list.items.filter(item => item.completed).length;
+  };
+
+  // Funkcja obliczająca procent ukończonych elementów
+  const getListProgress = (list) => {
+    if (!list || !list.items || list.items.length === 0) return 0;
+    const completedCount = getCompletedItemsCount(list);
+    return Math.round((completedCount / list.items.length) * 100);
   };
 
   // Obsługa klawisza Enter w polu nowego elementu
@@ -456,24 +525,141 @@ const ChecklistView = () => {
     );
   };
 
-  // Renderowanie komponentu
-  return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white">Moje Listy</h1>
-        <div className="flex space-x-3">
-          <div className="relative">
-            <select
-              className="appearance-none bg-dark-200 hover:bg-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
+  // Renderowanie kafelka zadania
+  const renderTaskTile = (task) => {
+    const listsForTask = getListsForTask(task.id);
+    const hasLists = listsForTask.length > 0;
+    
+    return (
+      <motion.div
+        key={task.id}
+        className="bg-dark-200 rounded-lg border border-dark-200/90 shadow-lg overflow-hidden w-full flex flex-col"
+        whileHover={{ y: -3, boxShadow: "0 8px 20px -5px rgba(0, 0, 0, 0.3)" }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="p-4 flex justify-between items-start">
+          <div>
+            <h3 className="font-medium text-white text-lg mb-1">{task.title}</h3>
+            <div className="flex items-center text-sm text-gray-400 mb-2">
+              <Calendar size={14} className="mr-1" />
+              <span>{formatDate(task.deadline)}</span>
+              <span className="mx-2">•</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs ${
+                task.priority === 'Wysoki' || task.priority === 'Krytyczny' 
+                  ? 'bg-red-500/20 text-red-400' 
+                  : task.priority === 'Średni' 
+                    ? 'bg-yellow-500/20 text-yellow-400' 
+                    : 'bg-green-500/20 text-green-400'
+              }`}>
+                {task.priority}
+              </span>
+            </div>
+            
+            {hasLists ? (
+              <div className="text-sm text-primary/90 flex items-center">
+                <ListChecks size={14} className="mr-1" />
+                <span>Liczba list: {listsForTask.length}</span>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 flex items-center">
+                <ListChecks size={14} className="mr-1" />
+                <span>Brak list</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex space-x-2">
+            {hasLists && (
+              <motion.button
+                className="flex items-center bg-dark-300 hover:bg-dark-400 text-white px-3 py-1 rounded-md text-xs"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => showTaskView(task.id)}
+              >
+                <ListChecks size={14} className="mr-1" />
+                <span>Pokaż checklistę</span>
+              </motion.button>
+            )}
+            <motion.button
+              className="flex items-center bg-primary/80 hover:bg-primary text-white px-3 py-1 rounded-md text-xs"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => createNewList(task.id)}
             >
-              <option value="all">Wszystkie listy</option>
-              <option value="assigned">Przypisane do zadań</option>
-              <option value="unassigned">Osobiste</option>
-            </select>
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter size={18} className="text-gray-400" />
+              <Plus size={14} className="mr-1" />
+              <span>Dodaj listę</span>
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Renderowanie widoku zadania
+  const renderTaskView = () => {
+    const task = getTaskById(activeTaskId);
+    if (!task) {
+      return (
+        <div className="text-center py-10">
+          <div className="text-gray-400">
+            <p>Zadanie nie zostało znalezione lub zostało usunięte.</p>
+            <button 
+              className="mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg"
+              onClick={backToAllLists}
+            >
+              Powrót do list
+            </button>
+          </div>
+        </div>
+      );
+    }
+    
+    // Listy dla zadania są już przefiltrowane przez getFilteredLists
+    const listsForTask = filteredLists;
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center">
+          <button 
+            className="text-gray-400 hover:text-white flex items-center mr-4"
+            onClick={backToAllLists}
+          >
+            <ArrowLeft size={20} className="mr-1" />
+            <span>Powrót</span>
+          </button>
+          <h1 className="text-2xl font-bold text-white">{task.title}</h1>
+        </div>
+        
+        <div className="bg-dark-100/30 rounded-xl p-4 flex justify-between">
+          <div className="flex space-x-6">
+            <div>
+              <div className="text-sm text-gray-400 mb-1">Termin</div>
+              <div className="text-white flex items-center">
+                <Calendar size={16} className="mr-2 text-primary" />
+                {formatDate(task.deadline)}
+              </div>
+            </div>
+            
+            <div>
+              <div className="text-sm text-gray-400 mb-1">Priorytet</div>
+              <div className={`flex items-center ${
+                task.priority === 'Wysoki' || task.priority === 'Krytyczny' 
+                  ? 'text-red-400' 
+                  : task.priority === 'Średni' 
+                    ? 'text-yellow-400' 
+                    : 'text-green-400'
+              }`}>
+                <span className="font-medium">{task.priority}</span>
+              </div>
+            </div>
+            
+            <div>
+              <div className="text-sm text-gray-400 mb-1">Status</div>
+              <div className="text-white">
+                {task.status === 'in-progress' ? 'W trakcie' : 'Do zrobienia'}
+              </div>
             </div>
           </div>
           
@@ -481,51 +667,143 @@ const ChecklistView = () => {
             className="flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={createNewList}
+            onClick={() => createNewList(task.id)}
           >
             <Plus size={18} className="mr-2" />
-            <span>Nowa lista</span>
+            <span>Nowa lista dla zadania</span>
           </motion.button>
         </div>
-      </div>
-
-      {/* Pasek wyszukiwania */}
-      <div className="bg-dark-100/50 backdrop-blur-sm rounded-xl border border-dark-100/80 shadow-lg p-4 mb-6">
-        <div className="relative w-full">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
-          <input
-            type="text"
-            className="w-full bg-dark-200 border border-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-            placeholder="Szukaj list..."
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Lista kafelków */}
-      {filteredLists.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredLists.map(list => renderListTile(list))}
-        </div>
-      ) : (
-        <div className="text-center py-10">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-gray-400"
-          >
-            <div className="mb-4 flex justify-center">
-              <ListChecks size={48} className="text-gray-500" />
+        
+        <div>
+          <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+            <ListChecks size={20} className="mr-2 text-primary" />
+            Listy zadania
+          </h2>
+          
+          {listsForTask.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {listsForTask.map(list => renderListTile(list))}
             </div>
-            <h3 className="text-lg font-medium text-gray-300 mb-1">Brak list</h3>
-            <p className="text-gray-400">
-              {searchValue ? "Nie znaleziono list pasujących do wyszukiwania" : "Dodaj nową listę, aby rozpocząć"}
-            </p>
-          </motion.div>
+          ) : (
+            <div className="bg-dark-100/30 rounded-xl p-6 text-center">
+              <ListChecks size={40} className="text-gray-500 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-300 mb-2">Brak list dla tego zadania</h3>
+              <p className="text-gray-400 mb-4">
+                Dodaj nową listę, aby uporządkować pracę nad zadaniem
+              </p>
+              <motion.button
+                className="flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg mx-auto"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => createNewList(task.id)}
+              >
+                <Plus size={18} className="mr-2" />
+                <span>Nowa lista</span>
+              </motion.button>
+            </div>
+          )}
         </div>
+      </div>
+    );
+  };
+
+  // Renderowanie komponentu głównego
+  return (
+    <div className="w-full">
+      {activeTaskId !== null ? (
+        renderTaskView()
+      ) : (
+        <>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-white">Moje Listy</h1>
+            <div className="flex space-x-3">
+              <div className="relative">
+                <select
+                  className="appearance-none bg-dark-200 hover:bg-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  value={selectedFilter}
+                  onChange={(e) => setSelectedFilter(e.target.value)}
+                >
+                  <option value="all">Wszystkie listy</option>
+                  <option value="assigned">Przypisane do zadań</option>
+                  <option value="unassigned">Osobiste</option>
+                </select>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Filter size={18} className="text-gray-400" />
+                </div>
+              </div>
+              
+              <motion.button
+                className="flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => createNewList()}
+              >
+                <Plus size={18} className="mr-2" />
+                <span>Nowa lista</span>
+              </motion.button>
+            </div>
+          </div>
+
+          {/* Pasek wyszukiwania */}
+          <div className="bg-dark-100/50 backdrop-blur-sm rounded-xl border border-dark-100/80 shadow-lg p-4 mb-6">
+            <div className="relative w-full">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search size={18} className="text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className="w-full bg-dark-200 border border-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="Szukaj list..."
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Zadania - widoczne tylko gdy filtr ustawiony na "assigned" */}
+          {selectedFilter === 'assigned' && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+                <CheckSquare size={20} className="mr-2 text-primary" />
+                Zadania
+              </h2>
+              <div className="space-y-4">
+                {tasks.map(task => renderTaskTile(task))}
+              </div>
+            </div>
+          )}
+
+          {/* Lista kafelków */}
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+              <ListChecks size={20} className="mr-2 text-primary" />
+              Listy {selectedFilter === 'assigned' ? 'przypisane do zadań' : 
+                     selectedFilter === 'unassigned' ? 'osobiste' : ''}
+            </h2>
+            
+            {filteredLists.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredLists.map(list => renderListTile(list))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-gray-400"
+                >
+                  <div className="mb-4 flex justify-center">
+                    <ListChecks size={48} className="text-gray-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-300 mb-1">Brak list</h3>
+                  <p className="text-gray-400">
+                    {searchValue ? "Nie znaleziono list pasujących do wyszukiwania" : "Dodaj nową listę, aby rozpocząć"}
+                  </p>
+                </motion.div>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* Modal edytora listy */}

@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import Dashboard from './components/Dashboard'
+import LandingPage from './components/LandingPage'
 
-function App() {
+function App({ showDashboard = false }) {
   return (
     <div className="app">
-      <Dashboard />
+      {showDashboard ? (
+        <Dashboard initialView="checklist" />
+      ) : (
+        <LandingPage />
+      )}
     </div>
   )
 }

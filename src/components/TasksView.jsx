@@ -17,6 +17,7 @@ import {
   X,
   AlertCircle,
   PlayCircle,
+  ListChecks
 } from 'lucide-react';
 
 const TasksView = () => {
@@ -231,6 +232,84 @@ const TasksView = () => {
   // Funkcja przełączająca menu zadania
   const toggleTaskMenu = (taskId) => {
     setTaskMenuOpen(taskMenuOpen === taskId ? null : taskId);
+  };
+
+  // Funkcje do obsługi powiązanych list zadań
+  const [checklistLists, setChecklistLists] = useState([
+    {
+      id: 1,
+      title: 'Do zrobienia na dziś',
+      createdAt: '2023-11-05',
+      updatedAt: '2023-11-07',
+      taskId: null,
+      items: [
+        { id: 1, text: 'Spotkanie zespołu o 10:00', completed: true },
+        { id: 2, text: 'Przejrzeć raporty sprzedażowe', completed: false },
+        { id: 3, text: 'Dokończyć prezentację dla klienta', completed: false },
+        { id: 4, text: 'Odpowiedzieć na emaile', completed: true },
+      ]
+    },
+    {
+      id: 2,
+      title: 'Lista zakupów',
+      createdAt: '2023-11-10',
+      updatedAt: '2023-11-10',
+      taskId: null,
+      items: [
+        { id: 1, text: 'Mleko', completed: false },
+        { id: 2, text: 'Chleb', completed: false },
+        { id: 3, text: 'Owoce', completed: false },
+        { id: 4, text: 'Warzywa', completed: true },
+      ]
+    },
+    {
+      id: 3,
+      title: 'Plan pracy nad prezentacją',
+      createdAt: '2023-11-12',
+      updatedAt: '2023-11-14',
+      taskId: 1,
+      items: [
+        { id: 1, text: 'Przygotować outline prezentacji', completed: true },
+        { id: 2, text: 'Zebrać dane do wykresów', completed: true },
+        { id: 3, text: 'Zaprojektować slajdy', completed: false },
+        { id: 4, text: 'Przygotować notki dla prezentera', completed: false },
+        { id: 5, text: 'Przeprowadzić próbną prezentację', completed: false },
+      ]
+    },
+    {
+      id: 4,
+      title: 'Plan aktualizacji dokumentacji',
+      createdAt: '2023-11-15',
+      updatedAt: '2023-11-15',
+      taskId: 3,
+      items: [
+        { id: 1, text: 'Zaktualizować diagramy architektury', completed: false },
+        { id: 2, text: 'Opisać nowe endpointy API', completed: false },
+        { id: 3, text: 'Uzupełnić dokumentację użytkownika', completed: false },
+      ]
+    },
+  ]);
+
+  // Sprawdzanie czy zadanie ma powiązane listy
+  const hasRelatedChecklists = (taskId) => {
+    return checklistLists.some(list => list.taskId === taskId);
+  };
+
+  // Przejście do widoku checklisty dla zadania
+  const goToChecklist = (taskId) => {
+    // Zmiana aktywnego elementu w sidbarze i przejście do widoku checklisty
+    // Ta część jest obsługiwana przez komponent Dashboard, więc musimy wywołać
+    // funkcję przekazaną przez props lub emitować zdarzenie
+    if (window.navigateToChecklist) {
+      window.navigateToChecklist(taskId);
+    } else {
+      // Alternatywne rozwiązanie - przekierowanie przez zmianę stanu aplikacji
+      const dashboardComponent = document.querySelector('[data-active-item]');
+      if (dashboardComponent) {
+        dashboardComponent.dataset.activeItem = 'checklist';
+        dashboardComponent.dataset.selectedTaskId = taskId;
+      }
+    }
   };
 
   // Przykładowe dane zadań
@@ -517,6 +596,15 @@ const TasksView = () => {
                               <div className="border-t border-dark-100 my-1"></div>
                               
                               {/* Opcje edycji i usuwania */}
+                              {hasRelatedChecklists(task.id) && (
+                                <button 
+                                  className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
+                                  onClick={() => goToChecklist(task.id)}
+                                >
+                                  <ListChecks size={16} className="mr-2 text-primary" />
+                                  <span>Sprawdź listę</span>
+                                </button>
+                              )}
                               <button 
                                 className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
                                 onClick={() => openEditTaskModal(task.id)}
@@ -573,6 +661,16 @@ const TasksView = () => {
                       </div>
                       
                       <div className="flex space-x-2 mt-2 sm:mt-0">
+                        {hasRelatedChecklists(task.id) && (
+                          <motion.button 
+                            className="p-1.5 bg-dark-200 hover:bg-dark-100 rounded-full text-gray-400 hover:text-primary flex items-center"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => goToChecklist(task.id)}
+                          >
+                            <ListChecks size={16} className="text-primary" />
+                          </motion.button>
+                        )}
                         <motion.button 
                           className="p-1.5 bg-dark-200 hover:bg-dark-100 rounded-full text-gray-400 hover:text-primary"
                           whileHover={{ scale: 1.1 }}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, 
@@ -26,10 +26,11 @@ import {
 import TasksView from './TasksView';
 import ChecklistView from './ChecklistView';
 
-const Dashboard = () => {
+const Dashboard = ({ initialView = 'home' }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  const [activeItem, setActiveItem] = useState('home');
+  const [activeItem, setActiveItem] = useState(initialView);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
 
   const handleMouseEnter = () => {
     if (!isPinned) setIsExpanded(true);
@@ -43,6 +44,20 @@ const Dashboard = () => {
     setIsPinned(!isPinned);
     setIsExpanded(!isPinned);
   };
+
+  // Funkcja nawigacji do widoku checklisty dla konkretnego zadania
+  const navigateToChecklist = (taskId) => {
+    setActiveItem('checklist');
+    setSelectedTaskId(taskId);
+  };
+
+  // Dodajemy funkcję do globalnego obiektu window, aby inne komponenty mogły jej używać
+  useEffect(() => {
+    window.navigateToChecklist = navigateToChecklist;
+    return () => {
+      delete window.navigateToChecklist;
+    };
+  }, []);
 
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
@@ -123,7 +138,7 @@ const Dashboard = () => {
       case 'tasks':
         return <TasksView />;
       case 'checklist':
-        return <ChecklistView />;
+        return <ChecklistView selectedTaskId={selectedTaskId} />;
       case 'home':
       default:
         return renderHomeView();
@@ -526,8 +541,13 @@ const Dashboard = () => {
     </>
   );
 
+  // Zaktualizuj useEffect, aby reagował na zmianę initialView
+  useEffect(() => {
+    setActiveItem(initialView);
+  }, [initialView]);
+
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden" data-active-item={activeItem} data-selected-task-id={selectedTaskId}>
       {/* Sidebar */}
       <motion.div 
         className="relative h-full bg-dark-200/80 backdrop-blur-md border-r border-dark-100 shadow-xl z-10"
