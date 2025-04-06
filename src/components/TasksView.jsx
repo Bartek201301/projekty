@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Plus,
   Filter,
@@ -14,6 +14,7 @@ import {
   Circle,
   ArrowUpDown,
   CheckSquare,
+  X,
 } from 'lucide-react';
 
 const TasksView = () => {
@@ -22,9 +23,18 @@ const TasksView = () => {
   const [searchValue, setSearchValue] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedSort, setSelectedSort] = useState('deadline');
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    deadline: new Date().toISOString().split('T')[0],
+    priority: 'Średni',
+    tags: '',
+  });
   
   const filterRef = useRef(null);
   const sortRef = useRef(null);
+  const modalRef = useRef(null);
 
   // Hook zamykający menu po kliknięciu na zewnątrz
   useEffect(() => {
@@ -35,13 +45,16 @@ const TasksView = () => {
       if (sortRef.current && !sortRef.current.contains(event.target)) {
         setSortOpen(false);
       }
+      if (modalRef.current && !modalRef.current.contains(event.target) && showTaskModal) {
+        setShowTaskModal(false);
+      }
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, []);
+  }, [showTaskModal]);
 
   // Funkcja obsługująca wybór filtra
   const handleFilterSelect = (filter) => {
@@ -53,6 +66,51 @@ const TasksView = () => {
   const handleSortSelect = (sort) => {
     setSelectedSort(sort);
     setSortOpen(false);
+  };
+
+  // Obsługa pól formularza nowego zadania
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewTask({
+      ...newTask,
+      [name]: value,
+    });
+  };
+
+  // Funkcja dodająca nowe zadanie
+  const addNewTask = () => {
+    // Walidacja
+    if (!newTask.title.trim()) {
+      alert('Proszę podać tytuł zadania');
+      return;
+    }
+
+    const tagsArray = newTask.tags.split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag !== '');
+
+    const newTaskObj = {
+      id: tasks.length > 0 ? Math.max(...tasks.map(task => task.id)) + 1 : 1,
+      title: newTask.title,
+      description: newTask.description,
+      deadline: newTask.deadline,
+      priority: newTask.priority,
+      status: 'to-do',
+      tags: tagsArray,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+
+    setTasks([...tasks, newTaskObj]);
+    
+    // Reset formularza i zamknięcie modala
+    setNewTask({
+      title: '',
+      description: '',
+      deadline: new Date().toISOString().split('T')[0],
+      priority: 'Średni',
+      tags: '',
+    });
+    setShowTaskModal(false);
   };
 
   // Przykładowe dane zadań
@@ -214,6 +272,7 @@ const TasksView = () => {
           className="flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          onClick={() => setShowTaskModal(true)}
         >
           <Plus size={18} className="mr-2" />
           <span>Nowe zadanie</span>
@@ -239,102 +298,37 @@ const TasksView = () => {
 
           {/* Przyciski filtrowania i sortowania */}
           <div className="flex gap-3">
-            {/* Filtrowanie */}
-            <div className="relative" ref={filterRef}>
-              <button
-                className="flex items-center bg-dark-200 hover:bg-dark-100 text-white px-4 py-2 rounded-lg"
-                onClick={() => setFilterOpen(!filterOpen)}
+            {/* Filtrowanie - nowa implementacja z użyciem selektora */}
+            <div className="relative">
+              <select
+                className="appearance-none bg-dark-200 hover:bg-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                value={selectedFilter}
+                onChange={(e) => setSelectedFilter(e.target.value)}
               >
-                <Filter size={18} className="mr-2 text-gray-400" />
-                <span>Filtruj</span>
-              </button>
-              
-              <AnimatePresence>
-                {filterOpen && (
-                  <motion.div
-                    className="absolute right-0 mt-2 w-48 bg-dark-200 rounded-lg shadow-xl border border-dark-100 z-50"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="py-1">
-                      <button 
-                        className={`w-full text-left px-4 py-2 text-sm ${selectedFilter === 'all' ? 'bg-primary/20 text-primary' : 'text-white hover:bg-dark-100'}`}
-                        onClick={() => handleFilterSelect('all')}
-                      >
-                        Wszystkie zadania
-                      </button>
-                      <button 
-                        className={`w-full text-left px-4 py-2 text-sm ${selectedFilter === 'to-do' ? 'bg-primary/20 text-primary' : 'text-white hover:bg-dark-100'}`}
-                        onClick={() => handleFilterSelect('to-do')}
-                      >
-                        Do zrobienia
-                      </button>
-                      <button 
-                        className={`w-full text-left px-4 py-2 text-sm ${selectedFilter === 'in-progress' ? 'bg-primary/20 text-primary' : 'text-white hover:bg-dark-100'}`}
-                        onClick={() => handleFilterSelect('in-progress')}
-                      >
-                        W trakcie
-                      </button>
-                      <button 
-                        className={`w-full text-left px-4 py-2 text-sm ${selectedFilter === 'completed' ? 'bg-primary/20 text-primary' : 'text-white hover:bg-dark-100'}`}
-                        onClick={() => handleFilterSelect('completed')}
-                      >
-                        Ukończone
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                <option value="all">Wszystkie zadania</option>
+                <option value="to-do">Do zrobienia</option>
+                <option value="in-progress">W trakcie</option>
+                <option value="completed">Ukończone</option>
+              </select>
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Filter size={18} className="text-gray-400" />
+              </div>
             </div>
-
-            {/* Sortowanie */}
-            <div className="relative" ref={sortRef}>
-              <button
-                className="flex items-center bg-dark-200 hover:bg-dark-100 text-white px-4 py-2 rounded-lg"
-                onClick={() => setSortOpen(!sortOpen)}
+            
+            {/* Sortowanie - nowa implementacja z użyciem selektora */}
+            <div className="relative">
+              <select
+                className="appearance-none bg-dark-200 hover:bg-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                value={selectedSort}
+                onChange={(e) => setSelectedSort(e.target.value)}
               >
-                <ArrowUpDown size={18} className="mr-2 text-gray-400" />
-                <span>
-                  {selectedSort === 'deadline' && 'Termin'}
-                  {selectedSort === 'priority' && 'Priorytet'}
-                  {selectedSort === 'created' && 'Data utworzenia'}
-                </span>
-              </button>
-              
-              <AnimatePresence>
-                {sortOpen && (
-                  <motion.div
-                    className="absolute right-0 mt-2 w-48 bg-dark-200 rounded-lg shadow-xl border border-dark-100 z-50"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="py-1">
-                      <button 
-                        className={`w-full text-left px-4 py-2 text-sm ${selectedSort === 'deadline' ? 'bg-primary/20 text-primary' : 'text-white hover:bg-dark-100'}`}
-                        onClick={() => handleSortSelect('deadline')}
-                      >
-                        Termin
-                      </button>
-                      <button 
-                        className={`w-full text-left px-4 py-2 text-sm ${selectedSort === 'priority' ? 'bg-primary/20 text-primary' : 'text-white hover:bg-dark-100'}`}
-                        onClick={() => handleSortSelect('priority')}
-                      >
-                        Priorytet
-                      </button>
-                      <button 
-                        className={`w-full text-left px-4 py-2 text-sm ${selectedSort === 'created' ? 'bg-primary/20 text-primary' : 'text-white hover:bg-dark-100'}`}
-                        onClick={() => handleSortSelect('created')}
-                      >
-                        Data utworzenia
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                <option value="deadline">Termin</option>
+                <option value="priority">Priorytet</option>
+                <option value="created">Data utworzenia</option>
+              </select>
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <ArrowUpDown size={18} className="text-gray-400" />
+              </div>
             </div>
           </div>
         </div>
@@ -445,6 +439,120 @@ const TasksView = () => {
           </div>
         )}
       </div>
+
+      {/* Modal dodawania nowego zadania */}
+      {showTaskModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
+          <motion.div
+            ref={modalRef}
+            className="bg-dark-100 rounded-xl border border-dark-100/80 shadow-2xl w-full max-w-md overflow-hidden"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="flex justify-between items-center border-b border-dark-200 p-4">
+              <h2 className="text-xl font-bold text-white">Nowe zadanie</h2>
+              <button 
+                className="text-gray-400 hover:text-white rounded-full p-1"
+                onClick={() => setShowTaskModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">Tytuł zadania*</label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    className="w-full bg-dark-200 border border-dark-100 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="Wpisz tytuł zadania"
+                    value={newTask.title}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1">Opis zadania</label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    className="w-full bg-dark-200 border border-dark-100 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="Opisz zadanie"
+                    rows="3"
+                    value={newTask.description}
+                    onChange={handleInputChange}
+                  ></textarea>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="deadline" className="block text-sm font-medium text-gray-300 mb-1">Termin</label>
+                    <input
+                      type="date"
+                      id="deadline"
+                      name="deadline"
+                      className="w-full bg-dark-200 border border-dark-100 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      value={newTask.deadline}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="priority" className="block text-sm font-medium text-gray-300 mb-1">Priorytet</label>
+                    <select
+                      id="priority"
+                      name="priority"
+                      className="w-full bg-dark-200 border border-dark-100 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      value={newTask.priority}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Krytyczny">Krytyczny</option>
+                      <option value="Wysoki">Wysoki</option>
+                      <option value="Średni">Średni</option>
+                      <option value="Niski">Niski</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="tags" className="block text-sm font-medium text-gray-300 mb-1">Tagi (oddzielone przecinkami)</label>
+                  <input
+                    type="text"
+                    id="tags"
+                    name="tags"
+                    className="w-full bg-dark-200 border border-dark-100 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="Projekt, Frontend, Design, ..."
+                    value={newTask.tags}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex gap-3 justify-end">
+                <button
+                  className="px-4 py-2 bg-dark-200 hover:bg-dark-100 text-white rounded-lg"
+                  onClick={() => setShowTaskModal(false)}
+                >
+                  Anuluj
+                </button>
+                <motion.button
+                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={addNewTask}
+                >
+                  Dodaj zadanie
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
