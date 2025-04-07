@@ -26,6 +26,7 @@ import {
 import TasksView from './TasksView';
 import ChecklistView from './ChecklistView';
 import SettingsView from './SettingsView';
+import RoadmapView from './RoadmapView';
 
 const Dashboard = ({ initialView = 'home' }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -143,9 +144,7 @@ const Dashboard = ({ initialView = 'home' }) => {
       case 'settings':
         return <SettingsView />;
       case 'roadmap':
-        // Przekierowanie do strony RoadmapCreator
-        window.location.href = '/roadmap-creator';
-        return null;
+        return <RoadmapView />;
       case 'home':
       default:
         return renderHomeView();
