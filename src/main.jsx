@@ -1,39 +1,31 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import App from './App.jsx'
-import RoadmapCreator from './components/RoadmapCreator.jsx'
 import './index.css'
 
-// Ustalamy, czy renderujemy stronę główną czy dashboard na podstawie URL
-const isHomePage = window.location.pathname === '/' || window.location.pathname === '/index.html';
-const isDashboardPage = window.location.pathname === '/dashboard' || window.location.pathname === '/dashboard.html';
-const isRoadmapPage = window.location.pathname === '/roadmap-creator';
-
-// Tworzymy router z prostym przekierowaniem
+// Konfiguracja routera
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App showDashboard={false} />,
+    element: <App />,
   },
   {
     path: "/dashboard",
     element: <App showDashboard={true} />,
   },
   {
-    path: "/roadmap-creator",
-    element: <RoadmapCreator />,
+    path: "/dashboard.html",
+    element: <Navigate to="/dashboard" replace />,
   },
+  {
+    path: "*",
+    element: <Navigate to="/" replace />,
+  }
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    {/* Używamy RouterProvider, jeśli mamy pełne ścieżki */}
-    {(isHomePage || isDashboardPage || isRoadmapPage) ? (
-      isRoadmapPage ? <RoadmapCreator /> : 
-      isDashboardPage ? <App showDashboard={true} /> : <App showDashboard={false} />
-    ) : (
-      <RouterProvider router={router} />
-    )}
+    <RouterProvider router={router} />
   </React.StrictMode>,
 ) 
