@@ -36,6 +36,11 @@ const ChecklistView = ({ selectedTaskId = null }) => {
   const [newListTitle, setNewListTitle] = useState('');
   const [newItemText, setNewItemText] = useState('');
   const [deleteListId, setDeleteListId] = useState(null);
+  const [newListText, setNewListText] = useState('');
+  const [expandedListId, setExpandedListId] = useState(null);
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editingTitleId, setEditingTitleId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
   
   // Do zarządzania widokiem zadania używamy jednego stanu z wyraźnie określonym typem
   const [activeTaskId, setActiveTaskId] = useState(
@@ -438,65 +443,341 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     }
   };
 
+  // Toggle the expanded state for adding a new item
+  const toggleListExpand = (listId) => {
+    // Make sure we're working with numbers for proper comparison
+    const numericListId = Number(listId);
+    const numericExpandedId = expandedListId !== null ? Number(expandedListId) : null;
+    
+    // If we're expanding a list different from the currently expanded one
+    if (numericExpandedId !== numericListId) {
+      setExpandedListId(numericListId);
+    } else {
+      // If it's the same list, toggle it
+      setExpandedListId(null);
+    }
+    
+    // Reset text and editing states when toggling
+    setNewListText('');
+    setEditingItemId(null);
+  };
+
+  // Edit an item in a specific list
+  const editItemInList = (listId, itemId) => {
+    // Make sure we're working with numbers
+    const numericListId = Number(listId);
+    const numericItemId = Number(itemId);
+    
+    // Get the list and item to edit
+    const listToEdit = checklistLists.find(list => list.id === numericListId);
+    if (!listToEdit) return;
+    
+    // If itemId is provided, we're editing an existing item
+    if (numericItemId) {
+      const itemToEdit = listToEdit.items.find(item => item.id === numericItemId);
+      if (itemToEdit) {
+        // Set the text to edit mode
+        setNewListText(itemToEdit.text);
+        setEditingItemId(numericItemId);
+      }
+    }
+  };
+
+  // Save the edited item
+  const saveEditedItem = (listId, itemId) => {
+    // Make sure we're working with numbers
+    const numericListId = Number(listId);
+    const numericItemId = Number(itemId);
+    
+    // Only update if we have a valid item text
+    if (newListText.trim()) {
+      setChecklistLists(checklistLists.map(list => {
+        if (list.id === numericListId) {
+          return {
+            ...list,
+            items: list.items.map(item => 
+              item.id === numericItemId ? {...item, text: newListText} : item
+            ),
+            updatedAt: new Date().toISOString().split('T')[0]
+          };
+        }
+        return list;
+      }));
+    }
+    
+    // Reset the editing state
+    setNewListText('');
+    setEditingItemId(null);
+  };
+
+  // Remove an item from a specific list
+  const removeItemFromSpecificList = (listId, itemId) => {
+    // Make sure we're working with numbers
+    const numericListId = Number(listId);
+    const numericItemId = Number(itemId);
+    
+    setChecklistLists(checklistLists.map(list => {
+      if (list.id === numericListId) {
+        return {
+          ...list,
+          items: list.items.filter(item => item.id !== numericItemId),
+          updatedAt: new Date().toISOString().split('T')[0]
+        };
+      }
+      return list;
+    }));
+  };
+
+  // Toggle completion of an item in a specific list
+  const toggleItemInList = (listId, itemId) => {
+    // Make sure we're working with numbers
+    const numericListId = Number(listId);
+    const numericItemId = Number(itemId);
+    
+    setChecklistLists(checklistLists.map(list => {
+      if (list.id === numericListId) {
+        return {
+          ...list,
+          items: list.items.map(item => 
+            item.id === numericItemId ? {...item, completed: !item.completed} : item
+          ),
+          updatedAt: new Date().toISOString().split('T')[0]
+        };
+      }
+      return list;
+    }));
+  };
+
+  // Add new item to a specific list
+  const addItemToList = (listId) => {
+    if (!newListText.trim()) return;
+    
+    const numericListId = Number(listId);
+    
+    setChecklistLists(checklistLists.map(list => {
+      if (list.id === numericListId) {
+        const newItem = {
+          id: list.items.length > 0 ? Math.max(...list.items.map(item => item.id)) + 1 : 1,
+          text: newListText,
+          completed: false
+        };
+        
+        return {
+          ...list,
+          items: [...list.items, newItem],
+          updatedAt: new Date().toISOString().split('T')[0]
+        };
+      }
+      return list;
+    }));
+    
+    setNewListText('');
+    // Close the input field after adding an item
+    setExpandedListId(null);
+  };
+
+  // Handle keydown in the new item input field
+  const handleListItemKeyDown = (e, listId) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addItemToList(listId);
+    } else if (e.key === 'Escape') {
+      setExpandedListId(null);
+      setNewListText('');
+    }
+  };
+
+  // Handle keydown for editing
+  const handleEditKeyDown = (e, listId, itemId) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveEditedItem(listId, itemId);
+    } else if (e.key === 'Escape') {
+      setNewListText('');
+      setEditingItemId(null);
+    }
+  };
+
+  // Edit the title of a list
+  const startTitleEdit = (listId, currentTitle) => {
+    setEditingTitleId(listId);
+    setEditingTitle(currentTitle);
+  };
+
+  // Save the edited title
+  const saveTitleEdit = (listId) => {
+    if (!editingTitle.trim()) return;
+    
+    setChecklistLists(checklistLists.map(list => {
+      if (list.id === listId) {
+        return {
+          ...list,
+          title: editingTitle,
+          updatedAt: new Date().toISOString().split('T')[0]
+        };
+      }
+      return list;
+    }));
+    
+    setEditingTitleId(null);
+    setEditingTitle('');
+  };
+
+  // Handle blur for title edit
+  const handleTitleBlur = (listId) => {
+    saveTitleEdit(listId);
+  };
+
+  // Handle blur for item input
+  const handleItemInputBlur = (listId) => {
+    const numericListId = Number(listId);
+    
+    if (newListText.trim()) {
+      addItemToList(numericListId);
+    } else {
+      setExpandedListId(null);
+    }
+  };
+
+  // Handle keydown for title edit
+  const handleTitleEditKeyDown = (e, listId) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveTitleEdit(listId);
+    } else if (e.key === 'Escape') {
+      setEditingTitleId(null);
+      setEditingTitle('');
+    }
+  };
+
   // Renderowanie kafelka listy
   const renderListTile = (list) => {
     const progress = getListProgress(list);
     const relatedTask = getRelatedTask(list.taskId);
+    // Ensure we're comparing numbers
+    const isExpanded = Number(expandedListId) === Number(list.id);
+    const isEditingThisTitle = Number(editingTitleId) === Number(list.id);
     
     return (
       <motion.div
         key={list.id}
-        className="bg-dark-200 rounded-lg border border-dark-200/90 shadow-lg overflow-hidden w-[275px] h-[200px] flex flex-col"
-        whileHover={{ y: -3, boxShadow: "0 8px 20px -5px rgba(0, 0, 0, 0.3)" }}
+        className="bg-dark-100 rounded-lg border border-dark-100/50 shadow-md overflow-visible w-[275px] flex flex-col relative"
+        style={{ height: 'auto' }}
+        whileHover={{ y: -3, boxShadow: "0 6px 16px -4px rgba(0, 0, 0, 0.3)" }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
-        onClick={() => openList(list)}
       >
-        <div className="p-3 flex-grow flex flex-col">
-          <div className="flex justify-between items-start">
-            <h3 className="font-medium text-white text-lg line-clamp-1">{list.title}</h3>
-            <button 
-              className="text-gray-400 hover:text-white p-1 rounded-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                initiateDeleteList(list.id);
-              }}
-            >
-              <Trash2 size={14} />
-            </button>
+        <div className="p-4 pb-10 flex-grow flex flex-col">
+          <div className="flex justify-between items-start mb-3">
+            {isEditingThisTitle ? (
+              <input
+                type="text"
+                className="flex-grow bg-dark-200/70 border border-dark-200 rounded px-2 py-1 text-white text-lg focus:outline-none focus:ring-1 focus:ring-primary"
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+                onKeyDown={(e) => handleTitleEditKeyDown(e, list.id)}
+                onBlur={() => handleTitleBlur(list.id)}
+                autoFocus
+              />
+            ) : (
+              <h3 className="font-medium text-white text-lg line-clamp-1">{list.title}</h3>
+            )}
+            <div className="flex items-center">
+              <button 
+                className="text-gray-400 hover:text-white p-1 rounded-full mr-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startTitleEdit(list.id, list.title);
+                }}
+              >
+                <Edit size={14} />
+              </button>
+              <button 
+                className="text-gray-400 hover:text-white p-1 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  initiateDeleteList(list.id);
+                }}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
           
-          {relatedTask && (
-            <div className="mt-1 flex items-center text-xs text-primary/90">
-              <Link2 size={12} className="mr-1" />
-              <span className="truncate">{relatedTask.title}</span>
-            </div>
-          )}
-          
-          <div className="mt-2 flex-grow">
-            <ul className="text-sm text-gray-300 space-y-0.5 overflow-hidden max-h-[110px]">
-              {list.items.slice(0, 3).map((item, index) => (
-                <li key={index} className="flex items-start py-1">
-                  <span className="mr-2 mt-0.5 flex-shrink-0">
-                    {item.completed ? (
-                      <CheckCircle2 size={14} className="text-green-500" />
+          <div className="flex-grow">
+            <ul className="text-sm text-gray-300 space-y-2">
+              {list.items.map((item, index) => {
+                // Check if this specific item is being edited
+                const isEditingThisItem = Number(editingItemId) === Number(item.id);
+                
+                return (
+                  <li key={index} className="flex items-center py-1 group">
+                    <button 
+                      className="mr-2 flex-shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleItemInList(list.id, item.id);
+                      }}
+                    >
+                      {item.completed ? (
+                        <CheckCircle2 size={20} className="text-green-500" />
+                      ) : (
+                        <Circle size={20} className="text-gray-400" />
+                      )}
+                    </button>
+                    
+                    {isEditingThisItem ? (
+                      <div className="flex-grow flex items-center bg-dark-200/50 rounded px-2">
+                        <input
+                          type="text"
+                          className="flex-grow bg-transparent border-none py-1 focus:outline-none focus:ring-0 text-white"
+                          value={newListText}
+                          onChange={(e) => setNewListText(e.target.value)}
+                          onKeyDown={(e) => handleEditKeyDown(e, list.id, item.id)}
+                          onBlur={() => saveEditedItem(list.id, item.id)}
+                          autoFocus
+                        />
+                      </div>
                     ) : (
-                      <Circle size={14} className="text-gray-400" />
+                      <>
+                        <span 
+                          className={`flex-grow text-base ${item.completed ? 'line-through text-gray-500' : 'text-white'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleItemInList(list.id, item.id);
+                          }}
+                        >
+                          {item.text}
+                        </span>
+                        
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            className="text-gray-400 hover:text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              editItemInList(list.id, item.id);
+                            }}
+                          >
+                            <Edit size={14} />
+                          </button>
+                          <button 
+                            className="text-gray-400 hover:text-red-500"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeItemFromSpecificList(list.id, item.id);
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </>
                     )}
-                  </span>
-                  <span className={`truncate ${item.completed ? 'line-through text-gray-500' : ''}`}>
-                    {item.text}
-                  </span>
-                </li>
-              ))}
-              {list.items.length > 3 && (
-                <li className="text-gray-400 italic text-xs pt-1">
-                  ...i {list.items.length - 3} więcej
-                </li>
-              )}
+                  </li>
+                );
+              })}
               {list.items.length === 0 && (
-                <li className="text-gray-400 italic py-1">
+                <li className="text-gray-400 italic py-2 text-center">
                   Lista jest pusta
                 </li>
               )}
@@ -504,22 +785,35 @@ const ChecklistView = ({ selectedTaskId = null }) => {
           </div>
         </div>
         
-        <div className="bg-dark-300 p-2 flex justify-between items-center">
-          <div className="text-xs text-gray-400">
-            {formatDate(list.updatedAt)}
-          </div>
-          
-          <div className="flex items-center">
-            <div className="text-xs text-gray-300 mr-2">
-              {getCompletedItemsCount(list)}/{list.items.length}
+        {isExpanded && (
+          <div className="px-4 pb-10">
+            <div className="flex items-center bg-dark-200 border border-dark-200/80 rounded-md overflow-hidden">
+              <input
+                type="text"
+                className="flex-grow bg-transparent border-none py-2 px-3 focus:outline-none focus:ring-0 text-white placeholder-gray-500 text-sm"
+                placeholder="Wpisz nowy element..."
+                value={newListText}
+                onChange={(e) => setNewListText(e.target.value)}
+                onKeyDown={(e) => handleListItemKeyDown(e, list.id)}
+                onBlur={() => handleItemInputBlur(list.id)}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+              />
             </div>
-            <div className="w-16 h-1.5 bg-dark-400 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
           </div>
+        )}
+        
+        {/* Centered plus button that sits on the bottom edge */}
+        <div className="absolute -bottom-6 left-0 right-0 flex justify-center">
+          <button
+            className="bg-purple-500 hover:bg-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleListExpand(list.id);
+            }}
+          >
+            <Plus size={22} />
+          </button>
         </div>
       </motion.div>
     );
@@ -895,7 +1189,7 @@ const ChecklistView = ({ selectedTaskId = null }) => {
                       
                       <button 
                         className="flex-shrink-0 mr-2 mt-1"
-                        onClick={() => toggleItemCompletion(item.id)}
+                        onClick={(e) => toggleItemCompletion(item.id)}
                       >
                         {item.completed ? (
                           <CheckCircle2 size={18} className="text-green-500" />

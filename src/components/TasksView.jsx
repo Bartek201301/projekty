@@ -19,6 +19,171 @@ import {
   PlayCircle,
   ListChecks
 } from 'lucide-react';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+
+// Typy dla drag and drop
+const ItemTypes = {
+  TASK: 'task'
+};
+
+// Komponent reprezentujący pojedyncze zadanie z obsługą drag and drop
+const TaskCard = ({ task, changeTaskStatus, openEditTaskModal, initiateDeleteTask, hasRelatedChecklists, goToChecklist, formatDate, getPriorityColor }) => {
+  // Poprawiona implementacja drag operacji
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.TASK,
+    item: () => ({ 
+      id: task.id, 
+      status: task.status 
+    }),
+    // Dodajemy końcową obsługę operacji drag
+    end: (item, monitor) => {
+      const dropResult = monitor.getDropResult();
+      // Jeśli zadanie zostało upuszczone na kolumnę i faktycznie zmieniono status
+      if (dropResult && dropResult.moved && item.status !== dropResult.newStatus) {
+        // Już wywołaliśmy changeTaskStatus w obsłudze drop, więc tutaj nic nie robimy
+        // To zapobiega podwójnym aktualizacjom
+      }
+    },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging()
+    }),
+  }), [task.id, task.status]); // Dodajemy zależności, aby useDrag odświeżał się, gdy zmieni się task.id lub task.status
+
+  return (
+    <div
+      ref={drag}
+      className={`bg-dark-100/50 backdrop-blur-sm rounded-xl border ${isDragging ? 'border-primary shadow-lg shadow-primary/20' : 'border-dark-100/80'} overflow-hidden mb-3 cursor-grab`}
+      style={{ 
+        opacity: isDragging ? 0.5 : 1,
+        transform: isDragging ? 'scale(1.05)' : 'scale(1)',
+        transition: 'opacity 0.2s, transform 0.2s',
+        zIndex: isDragging ? 999 : 1
+      }}
+    >
+      <div className="p-4">
+        <div className="flex justify-between items-start">
+          <h3 className={`text-lg font-medium ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-white'}`}>
+            {task.title}
+          </h3>
+          <div className="flex gap-4 bg-dark-200/80 rounded-lg p-1 -mt-1 -mr-1 border border-dark-100/30">
+            <motion.button 
+              className="text-gray-400 hover:text-primary p-1 rounded transition-colors duration-200"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => openEditTaskModal(task.id)}
+            >
+              <Edit size={16} />
+            </motion.button>
+            <motion.button 
+              className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors duration-200"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => initiateDeleteTask(task.id)}
+            >
+              <Trash2 size={16} />
+            </motion.button>
+          </div>
+        </div>
+        
+        <p className={`mt-1 text-sm ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-300'}`}>
+          {task.description}
+        </p>
+        
+        <div className="mt-3 flex flex-wrap gap-2">
+          {task.tags.map((tag, index) => (
+            <span key={index} className="bg-dark-200 text-xs px-2 py-1 rounded-full text-gray-300">
+              {tag}
+            </span>
+          ))}
+        </div>
+        
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center text-sm text-gray-400">
+            <Calendar size={14} className="mr-1" />
+            <span>
+              {task.status === 'completed' ? 
+                `Ukończono: ${formatDate(task.completedAt)}` : 
+                `Termin: ${formatDate(task.deadline)}`}
+            </span>
+          </div>
+          
+          <div className={`text-xs px-2 py-1 rounded-md ${getPriorityColor(task.priority)}`}>
+            {task.priority}
+          </div>
+        </div>
+        
+        {hasRelatedChecklists(task.id) && (
+          <div className="mt-2 flex justify-end">
+            <motion.button 
+              className="flex items-center text-xs text-primary hover:text-primary/70"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => goToChecklist(task.id)}
+            >
+              <ListChecks size={14} className="mr-1" />
+              Pokaż listę
+            </motion.button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Komponent reprezentujący kolumnę zadań
+const TaskColumn = ({ title, status, tasks, changeTaskStatus, openEditTaskModal, initiateDeleteTask, hasRelatedChecklists, goToChecklist, formatDate, getPriorityColor, iconComponent }) => {
+  // Poprawiony sposób obsługi drop operacji
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: ItemTypes.TASK,
+    // Sprawdź czy zadanie ma inny status niż ta kolumna
+    canDrop: (item) => item.status !== status,
+    drop: (item) => {
+      // Tutaj wywołujemy zmianę statusu - tylko raz po upuszczeniu
+      changeTaskStatus(item.id, status);
+      return { moved: true, newStatus: status };
+    },
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver() && monitor.canDrop(),
+    }),
+  }), [status, changeTaskStatus]); // Dodajemy zależności, aby useDrop odświeżał się, gdy zmieni się status lub changeTaskStatus
+
+  return (
+    <div 
+      ref={drop} 
+      className={`flex-1 bg-dark-200/30 backdrop-blur-sm rounded-xl border ${isOver ? 'border-primary border-2 bg-primary/5' : 'border-dark-100/30'} p-4 h-full flex flex-col transition-all duration-200`}
+    >
+      <div className={`flex items-center space-x-2 mb-4 text-white font-medium ${isOver ? 'text-primary' : ''}`}>
+        {iconComponent}
+        <h2 className="text-lg">{title}</h2>
+        <div className={`px-2 py-0.5 rounded-full text-xs ${isOver ? 'bg-primary/20 text-primary' : 'bg-dark-100/70 text-gray-300'}`}>
+          {tasks.length}
+        </div>
+      </div>
+      
+      <div className={`overflow-y-auto flex-grow ${isOver ? 'bg-primary/5 rounded-lg p-2 -mx-2' : ''}`}>
+        {tasks.length > 0 ? (
+          tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              changeTaskStatus={changeTaskStatus}
+              openEditTaskModal={openEditTaskModal}
+              initiateDeleteTask={initiateDeleteTask}
+              hasRelatedChecklists={hasRelatedChecklists}
+              goToChecklist={goToChecklist}
+              formatDate={formatDate}
+              getPriorityColor={getPriorityColor}
+            />
+          ))
+        ) : (
+          <div className={`text-center py-8 ${isOver ? 'bg-primary/10 border border-dashed border-primary/30 rounded-lg' : ''}`}>
+            <p className="text-gray-400 text-sm">{isOver ? 'Upuść tutaj' : 'Brak zadań'}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const TasksView = () => {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -206,27 +371,43 @@ const TasksView = () => {
     }
   };
 
-  // Funkcja zmieniająca status zadania
+  // Funkcja zmieniająca status zadania - poprawiona dla eliminacji błędów przy drag and drop
   const changeTaskStatus = (taskId, newStatus) => {
-    setTasks(tasks.map(task => {
+    // Znajdź zadanie, które jest zmieniane
+    const taskToUpdate = tasks.find(task => task.id === taskId);
+    
+    // Sprawdź, czy zadanie istnieje i czy status faktycznie się zmienia
+    if (!taskToUpdate || taskToUpdate.status === newStatus) {
+      return; // Nic nie rób, jeśli zadanie nie istnieje lub status jest taki sam
+    }
+    
+    // Utwórz nową kopię tabeli zadań z zaktualizowanym statusem
+    const updatedTasks = tasks.map(task => {
       if (task.id === taskId) {
         const updatedTask = { 
           ...task, 
           status: newStatus,
         };
         
-        // Dodaj datę ukończenia, jeśli zadanie jest oznaczone jako ukończone
-        if (newStatus === 'completed') {
+        // Aktualizuj datę ukończenia tylko jeśli potrzeba
+        if (newStatus === 'completed' && task.status !== 'completed') {
           updatedTask.completedAt = new Date().toISOString().split('T')[0];
-        } else if (task.status === 'completed') {
+        } else if (task.status === 'completed' && newStatus !== 'completed') {
           updatedTask.completedAt = null;
         }
         
         return updatedTask;
       }
       return task;
-    }));
-    setTaskMenuOpen(null);
+    });
+    
+    // Ustaw nową tablicę zadań bezpośrednio
+    setTasks(updatedTasks);
+    
+    // Zresetuj menu zadania, jeśli jest otwarte
+    if (taskMenuOpen === taskId) {
+      setTaskMenuOpen(null);
+    }
   };
 
   // Funkcja przełączająca menu zadania
@@ -290,26 +471,15 @@ const TasksView = () => {
     },
   ]);
 
-  // Sprawdzanie czy zadanie ma powiązane listy
+  // Funkcja sprawdzająca, czy zadanie ma powiązane listy zadań
   const hasRelatedChecklists = (taskId) => {
     return checklistLists.some(list => list.taskId === taskId);
   };
 
-  // Przejście do widoku checklisty dla zadania
+  // Funkcja nawigująca do widoku listy zadań
   const goToChecklist = (taskId) => {
-    // Zmiana aktywnego elementu w sidbarze i przejście do widoku checklisty
-    // Ta część jest obsługiwana przez komponent Dashboard, więc musimy wywołać
-    // funkcję przekazaną przez props lub emitować zdarzenie
-    if (window.navigateToChecklist) {
-      window.navigateToChecklist(taskId);
-    } else {
-      // Alternatywne rozwiązanie - przekierowanie przez zmianę stanu aplikacji
-      const dashboardComponent = document.querySelector('[data-active-item]');
-      if (dashboardComponent) {
-        dashboardComponent.dataset.activeItem = 'checklist';
-        dashboardComponent.dataset.selectedTaskId = taskId;
-      }
-    }
+    // Tutaj powinna być logika nawigacji do widoku listy zadań
+    console.log(`Navigating to checklist for task ${taskId}`);
   };
 
   // Przykładowe dane zadań
@@ -447,6 +617,31 @@ const TasksView = () => {
     }).format(date);
   };
 
+  // Filtrowanie zadań według statusu
+  const todoTasks = tasks.filter(task => 
+    task.status === 'to-do' && 
+    (searchValue === '' || 
+     task.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+     task.description.toLowerCase().includes(searchValue.toLowerCase()) ||
+     task.tags.some(tag => tag.toLowerCase().includes(searchValue.toLowerCase())))
+  );
+  
+  const inProgressTasks = tasks.filter(task => 
+    task.status === 'in-progress' && 
+    (searchValue === '' || 
+     task.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+     task.description.toLowerCase().includes(searchValue.toLowerCase()) ||
+     task.tags.some(tag => tag.toLowerCase().includes(searchValue.toLowerCase())))
+  );
+  
+  const completedTasks = tasks.filter(task => 
+    task.status === 'completed' && 
+    (searchValue === '' || 
+     task.title.toLowerCase().includes(searchValue.toLowerCase()) ||
+     task.description.toLowerCase().includes(searchValue.toLowerCase()) ||
+     task.tags.some(tag => tag.toLowerCase().includes(searchValue.toLowerCase())))
+  );
+
   // Renderowanie komponentu
   return (
     <div className="w-full">
@@ -463,11 +658,11 @@ const TasksView = () => {
         </motion.button>
       </div>
 
-      {/* Pasek narzędzi (wyszukiwanie i filtrowanie) */}
+      {/* Pasek narzędzi (wyszukiwanie) */}
       <div className="bg-dark-100/50 backdrop-blur-sm rounded-xl border border-dark-100/80 shadow-lg p-4 mb-6">
         <div className="flex flex-col md:flex-row justify-between gap-4">
           {/* Wyszukiwarka */}
-          <div className="relative w-full md:w-1/2">
+          <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search size={18} className="text-gray-400" />
             </div>
@@ -479,239 +674,55 @@ const TasksView = () => {
               onChange={(e) => setSearchValue(e.target.value)}
             />
           </div>
-
-          {/* Przyciski filtrowania i sortowania */}
-          <div className="flex gap-3">
-            {/* Filtrowanie - nowa implementacja z użyciem selektora */}
-            <div className="relative">
-              <select
-                className="appearance-none bg-dark-200 hover:bg-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                value={selectedFilter}
-                onChange={(e) => setSelectedFilter(e.target.value)}
-              >
-                <option value="all">Wszystkie zadania</option>
-                <option value="to-do">Do zrobienia</option>
-                <option value="in-progress">W trakcie</option>
-                <option value="completed">Ukończone</option>
-              </select>
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter size={18} className="text-gray-400" />
-              </div>
-            </div>
-            
-            {/* Sortowanie - nowa implementacja z użyciem selektora */}
-            <div className="relative">
-              <select
-                className="appearance-none bg-dark-200 hover:bg-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                value={selectedSort}
-                onChange={(e) => setSelectedSort(e.target.value)}
-              >
-                <option value="deadline">Termin</option>
-                <option value="priority">Priorytet</option>
-                <option value="created">Data utworzenia</option>
-              </select>
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <ArrowUpDown size={18} className="text-gray-400" />
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Lista zadań */}
-      <div className="space-y-4">
-        {sortedTasks.length > 0 ? (
-          sortedTasks.map((task) => (
-            <motion.div
-              key={task.id}
-              className="bg-dark-100/50 backdrop-blur-sm rounded-xl border border-dark-100/80 shadow-lg overflow-hidden"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              layout
-            >
-              <div className="p-5">
-                <div className="flex items-start">
-                  <button 
-                    className="flex-shrink-0 mt-1"
-                    onClick={() => 
-                      task.status === 'completed' 
-                        ? changeTaskStatus(task.id, 'to-do') 
-                        : changeTaskStatus(task.id, 'completed')}
-                  >
-                    {task.status === 'completed' ? (
-                      <CheckCircle2 size={22} className="text-green-500" />
-                    ) : (
-                      <Circle size={22} className="text-gray-500" />
-                    )}
-                  </button>
-                  
-                  <div className="ml-3 flex-grow">
-                    <div className="flex justify-between">
-                      <h3 className={`text-lg font-medium ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-white'}`}>
-                        {task.title}
-                      </h3>
-                      <div className="flex-shrink-0 relative" ref={taskMenuOpen === task.id ? taskMenuRef : null}>
-                        <button 
-                          className="text-gray-400 hover:text-white p-1 rounded-full"
-                          onClick={() => toggleTaskMenu(task.id)}
-                        >
-                          <MoreVertical size={18} />
-                        </button>
-                        
-                        {/* Menu opcji dla zadania */}
-                        {taskMenuOpen === task.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-dark-200 rounded-lg shadow-xl border border-dark-100 z-50">
-                            <div className="py-1">
-                              {/* Opcje zmiany statusu */}
-                              {task.status !== 'to-do' && (
-                                <button 
-                                  className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
-                                  onClick={() => changeTaskStatus(task.id, 'to-do')}
-                                >
-                                  <Circle size={16} className="mr-2 text-gray-400" />
-                                  <span>Do zrobienia</span>
-                                </button>
-                              )}
-                              {task.status !== 'in-progress' && (
-                                <button 
-                                  className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
-                                  onClick={() => changeTaskStatus(task.id, 'in-progress')}
-                                >
-                                  <PlayCircle size={16} className="mr-2 text-blue-400" />
-                                  <span>W trakcie</span>
-                                </button>
-                              )}
-                              {task.status !== 'completed' && (
-                                <button 
-                                  className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
-                                  onClick={() => changeTaskStatus(task.id, 'completed')}
-                                >
-                                  <CheckCircle2 size={16} className="mr-2 text-green-500" />
-                                  <span>Ukończone</span>
-                                </button>
-                              )}
-                              
-                              {/* Separator */}
-                              <div className="border-t border-dark-100 my-1"></div>
-                              
-                              {/* Opcje edycji i usuwania */}
-                              {hasRelatedChecklists(task.id) && (
-                                <button 
-                                  className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
-                                  onClick={() => goToChecklist(task.id)}
-                                >
-                                  <ListChecks size={16} className="mr-2 text-primary" />
-                                  <span>Sprawdź listę</span>
-                                </button>
-                              )}
-                              <button 
-                                className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
-                                onClick={() => openEditTaskModal(task.id)}
-                              >
-                                <Edit size={16} className="mr-2 text-primary" />
-                                <span>Edytuj</span>
-                              </button>
-                              <button 
-                                className="flex items-center w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-100"
-                                onClick={() => initiateDeleteTask(task.id)}
-                              >
-                                <Trash2 size={16} className="mr-2 text-red-500" />
-                                <span>Usuń</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <p className={`mt-1 text-sm ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-300'}`}>
-                      {task.description}
-                    </p>
-                    
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {task.tags.map((tag, index) => (
-                        <span key={index} className="bg-dark-200 text-xs px-2 py-1 rounded-full text-gray-300">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-4 flex flex-wrap items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center text-sm text-gray-400">
-                          <Calendar size={14} className="mr-1" />
-                          <span>
-                            {task.status === 'completed' ? 
-                              `Ukończono: ${formatDate(task.completedAt)}` : 
-                              `Termin: ${formatDate(task.deadline)}`}
-                          </span>
-                        </div>
-                        
-                        <div className={`text-xs px-2 py-1 rounded-md ${getPriorityColor(task.priority)}`}>
-                          {task.priority}
-                        </div>
-                        
-                        {/* Status zadania */}
-                        {task.status === 'in-progress' && (
-                          <div className="text-xs px-2 py-1 rounded-md bg-blue-500/10 text-blue-400">
-                            W trakcie
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex space-x-2 mt-2 sm:mt-0">
-                        {hasRelatedChecklists(task.id) && (
-                          <motion.button 
-                            className="p-1.5 bg-dark-200 hover:bg-dark-100 rounded-full text-gray-400 hover:text-primary flex items-center"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => goToChecklist(task.id)}
-                          >
-                            <ListChecks size={16} className="text-primary" />
-                          </motion.button>
-                        )}
-                        <motion.button 
-                          className="p-1.5 bg-dark-200 hover:bg-dark-100 rounded-full text-gray-400 hover:text-primary"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => openEditTaskModal(task.id)}
-                        >
-                          <Edit size={16} />
-                        </motion.button>
-                        <motion.button 
-                          className="p-1.5 bg-dark-200 hover:bg-dark-100 rounded-full text-gray-400 hover:text-red-500"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => initiateDeleteTask(task.id)}
-                        >
-                          <Trash2 size={16} />
-                        </motion.button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))
-        ) : (
-          <div className="text-center py-10">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-gray-400"
-            >
-              <div className="mb-4 flex justify-center">
-                <CheckSquare size={48} className="text-gray-500" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-300 mb-1">Brak zadań</h3>
-              <p className="text-gray-400">
-                {searchValue ? "Nie znaleziono zadań pasujących do wyszukiwania" : "Dodaj nowe zadanie, aby rozpocząć"}
-              </p>
-            </motion.div>
-          </div>
-        )}
-      </div>
+      {/* Kanban Board - trzy kolumny */}
+      <DndProvider backend={HTML5Backend}>
+        <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-240px)]">
+          <TaskColumn 
+            title="Do zrobienia" 
+            status="to-do"
+            tasks={todoTasks}
+            changeTaskStatus={changeTaskStatus}
+            openEditTaskModal={openEditTaskModal}
+            initiateDeleteTask={initiateDeleteTask}
+            hasRelatedChecklists={hasRelatedChecklists}
+            goToChecklist={goToChecklist}
+            formatDate={formatDate}
+            getPriorityColor={getPriorityColor}
+            iconComponent={<Circle size={18} className="text-gray-400" />}
+          />
+          
+          <TaskColumn 
+            title="W trakcie" 
+            status="in-progress"
+            tasks={inProgressTasks}
+            changeTaskStatus={changeTaskStatus}
+            openEditTaskModal={openEditTaskModal}
+            initiateDeleteTask={initiateDeleteTask}
+            hasRelatedChecklists={hasRelatedChecklists}
+            goToChecklist={goToChecklist}
+            formatDate={formatDate}
+            getPriorityColor={getPriorityColor}
+            iconComponent={<PlayCircle size={18} className="text-blue-400" />}
+          />
+          
+          <TaskColumn 
+            title="Ukończone" 
+            status="completed"
+            tasks={completedTasks}
+            changeTaskStatus={changeTaskStatus}
+            openEditTaskModal={openEditTaskModal}
+            initiateDeleteTask={initiateDeleteTask}
+            hasRelatedChecklists={hasRelatedChecklists}
+            goToChecklist={goToChecklist}
+            formatDate={formatDate}
+            getPriorityColor={getPriorityColor}
+            iconComponent={<CheckCircle2 size={18} className="text-green-500" />}
+          />
+        </div>
+      </DndProvider>
 
       {/* Modal dodawania/edycji zadania */}
       {showTaskModal && (
