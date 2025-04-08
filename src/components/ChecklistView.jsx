@@ -53,6 +53,9 @@ const ChecklistView = ({ selectedTaskId = null }) => {
   const titleInputRef = useRef(null);
   const newItemInputRef = useRef(null);
 
+  // Add this state to track item and list relationships
+  const [editingListId, setEditingListId] = useState(null);
+
   // Inicjalizacja stanu na podstawie przekazanego id zadania
   useEffect(() => {
     if (selectedTaskId) {
@@ -307,12 +310,15 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     closeListModal();
   };
 
-  // Zamykanie modalu listy
+  // Clean up states when closing the modal or changing lists
   const closeListModal = () => {
     setShowListModal(false);
     setCurrentList(null);
     setNewItemText('');
     setIsEditingTitle(false);
+    setEditingItemId(null);
+    setEditingListId(null);
+    setExpandedListId(null);
   };
 
   // Inicjowanie usuwania listy
@@ -460,6 +466,7 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     // Reset text and editing states when toggling
     setNewListText('');
     setEditingItemId(null);
+    setEditingListId(null);
   };
 
   // Edit an item in a specific list
@@ -479,6 +486,7 @@ const ChecklistView = ({ selectedTaskId = null }) => {
         // Set the text to edit mode
         setNewListText(itemToEdit.text);
         setEditingItemId(numericItemId);
+        setEditingListId(numericListId); // Track which list the item belongs to
       }
     }
   };
@@ -508,6 +516,7 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     // Reset the editing state
     setNewListText('');
     setEditingItemId(null);
+    setEditingListId(null);
   };
 
   // Remove an item from a specific list
@@ -548,16 +557,21 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     }));
   };
 
-  // Add new item to a specific list
+  // Add new item to a specific list with guaranteed unique ID
   const addItemToList = (listId) => {
     if (!newListText.trim()) return;
     
     const numericListId = Number(listId);
     
+    // Generate a globally unique ID across all lists
+    const allItems = checklistLists.flatMap(list => list.items);
+    const maxItemId = allItems.length > 0 ? Math.max(...allItems.map(item => item.id)) : 0;
+    const newItemId = maxItemId + 1;
+    
     setChecklistLists(checklistLists.map(list => {
       if (list.id === numericListId) {
         const newItem = {
-          id: list.items.length > 0 ? Math.max(...list.items.map(item => item.id)) + 1 : 1,
+          id: newItemId,
           text: newListText,
           completed: false
         };
@@ -584,6 +598,8 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     } else if (e.key === 'Escape') {
       setExpandedListId(null);
       setNewListText('');
+      setEditingItemId(null);
+      setEditingListId(null);
     }
   };
 
@@ -595,6 +611,7 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     } else if (e.key === 'Escape') {
       setNewListText('');
       setEditingItemId(null);
+      setEditingListId(null);
     }
   };
 
@@ -636,6 +653,8 @@ const ChecklistView = ({ selectedTaskId = null }) => {
       addItemToList(numericListId);
     } else {
       setExpandedListId(null);
+      setEditingItemId(null);
+      setEditingListId(null);
     }
   };
 
@@ -708,11 +727,11 @@ const ChecklistView = ({ selectedTaskId = null }) => {
           <div className="flex-grow">
             <ul className="text-sm text-gray-300 space-y-2">
               {list.items.map((item, index) => {
-                // Check if this specific item is being edited
-                const isEditingThisItem = Number(editingItemId) === Number(item.id);
+                // Check if this specific item in this specific list is being edited
+                const isEditingThisItem = Number(editingItemId) === Number(item.id) && Number(editingListId) === Number(list.id);
                 
                 return (
-                  <li key={index} className="flex items-center py-1 group">
+                  <li key={`${list.id}-${item.id}`} className="flex items-center py-1 group">
                     <button 
                       className="mr-2 flex-shrink-0"
                       onClick={(e) => {
