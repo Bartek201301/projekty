@@ -4,14 +4,13 @@ import {
   Home, 
   CheckSquare, 
   Map, 
-  Star, 
+  Calendar, 
   Settings, 
   LogOut, 
   Pin, 
   ChevronRight,
   Clock,
   TrendingUp,
-  Calendar,
   BarChart3,
   Clock3,
   CheckCircle2,
@@ -27,6 +26,7 @@ import TasksView from './TasksView';
 import ListaDoZrobienia from './ListaDoZrobienia';
 import SettingsView from './SettingsView';
 import RoadmapView from './RoadmapView';
+import CalendarView from './CalendarView';
 
 const Dashboard = ({ initialView = 'home' }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -76,7 +76,7 @@ const Dashboard = ({ initialView = 'home' }) => {
     { id: 'tasks', icon: CheckSquare, label: 'Zadania' },
     { id: 'checklist', icon: ListChecks, label: 'Lista do zrobienia' },
     { id: 'roadmap', icon: Map, label: 'Roadmapa' },
-    { id: 'favorites', icon: Star, label: 'Ulubione' },
+    { id: 'calendar', icon: Calendar, label: 'Kalendarz' },
     { id: 'settings', icon: Settings, label: 'Ustawienia' },
     { id: 'logout', icon: LogOut, label: 'Wyloguj' },
   ];
@@ -155,6 +155,8 @@ const Dashboard = ({ initialView = 'home' }) => {
         return <SettingsView />;
       case 'roadmap':
         return <RoadmapView />;
+      case 'calendar':
+        return <CalendarView />;
       case 'home':
       default:
         return renderHomeView();
