@@ -25,12 +25,14 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
   const [newItemText, setNewItemText] = useState('');
   const [deleteListId, setDeleteListId] = useState(null);
   const [activeTaskId, setActiveTaskId] = useState(selectedTaskId ? Number(selectedTaskId) : null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   // Referencje
   const modalRef = useRef(null);
   const deleteModalRef = useRef(null);
   const titleInputRef = useRef(null);
   const newItemInputRef = useRef(null);
+  const filterMenuRef = useRef(null);
 
   // Pusta lista do utworzenia nowej listy
   const emptyList = {
@@ -101,13 +103,16 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
       if (deleteModalRef.current && !deleteModalRef.current.contains(event.target) && showDeleteModal) {
         setShowDeleteModal(false);
       }
+      if (filterMenuRef.current && !filterMenuRef.current.contains(event.target) && isFilterOpen) {
+        setIsFilterOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [showListModal, showDeleteModal]);
+  }, [showListModal, showDeleteModal, isFilterOpen]);
 
   useEffect(() => {
     if (isEditingTitle && titleInputRef.current) {
@@ -294,18 +299,60 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
 
         {/* Filtry i przycisk dodawania */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="bg-dark-100/50 text-white py-2 px-3 rounded-xl flex items-center cursor-pointer">
-            <Filter size={16} className="mr-2 text-gray-400" />
-            <select 
-              className="bg-transparent focus:outline-none cursor-pointer"
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
+          <div className="relative" ref={filterMenuRef}>
+            <button 
+              className="bg-dark-100/50 text-white py-2 px-3 rounded-xl flex items-center cursor-pointer"
+              onClick={() => setIsFilterOpen(prev => !prev)}
             >
-              <option value="wszystkie">Wszystkie</option>
-              <option value="własne">Własne</option>
-              <option value="przypisane">Przypisane</option>
-              <option value="ukończone">Ukończone</option>
-            </select>
+              <Filter size={16} className="mr-2 text-gray-400" />
+              <span>{
+                selectedFilter === 'wszystkie' ? 'Wszystkie' :
+                selectedFilter === 'własne' ? 'Własne' :
+                selectedFilter === 'przypisane' ? 'Przypisane' :
+                'Ukończone'
+              }</span>
+            </button>
+            
+            {isFilterOpen && (
+              <div className="absolute top-full left-0 mt-1 bg-dark-200 border border-dark-100 rounded-xl shadow-lg z-10 w-40 overflow-hidden">
+                <div 
+                  className={`py-2 px-3 cursor-pointer ${selectedFilter === 'wszystkie' ? 'bg-primary text-white' : 'text-gray-300 hover:bg-dark-100'}`}
+                  onClick={() => {
+                    setSelectedFilter('wszystkie');
+                    setIsFilterOpen(false);
+                  }}
+                >
+                  Wszystkie
+                </div>
+                <div 
+                  className={`py-2 px-3 cursor-pointer ${selectedFilter === 'własne' ? 'bg-primary text-white' : 'text-gray-300 hover:bg-dark-100'}`}
+                  onClick={() => {
+                    setSelectedFilter('własne');
+                    setIsFilterOpen(false);
+                  }}
+                >
+                  Własne
+                </div>
+                <div 
+                  className={`py-2 px-3 cursor-pointer ${selectedFilter === 'przypisane' ? 'bg-primary text-white' : 'text-gray-300 hover:bg-dark-100'}`}
+                  onClick={() => {
+                    setSelectedFilter('przypisane');
+                    setIsFilterOpen(false);
+                  }}
+                >
+                  Przypisane
+                </div>
+                <div 
+                  className={`py-2 px-3 cursor-pointer ${selectedFilter === 'ukończone' ? 'bg-primary text-white' : 'text-gray-300 hover:bg-dark-100'}`}
+                  onClick={() => {
+                    setSelectedFilter('ukończone');
+                    setIsFilterOpen(false);
+                  }}
+                >
+                  Ukończone
+                </div>
+              </div>
+            )}
           </div>
 
           <motion.button
@@ -334,11 +381,12 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
               >
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-white font-bold text-lg truncate">{list.title}</h3>
+                    <h3 className="text-white font-bold text-lg truncate group-hover:text-primary transition-colors">{list.title}</h3>
                     <div className="flex items-center gap-1">
                       <button 
-                        className="text-gray-400 hover:text-white p-1 transition-colors"
+                        className="text-gray-400 hover:text-white p-1 transition-colors flex items-center"
                         onClick={() => openList(list)}
+                        title="Edytuj listę"
                       >
                         <Edit size={16} />
                       </button>
@@ -458,10 +506,12 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
                     />
                   ) : (
                     <h2 
-                      className="text-xl font-bold text-white cursor-pointer" 
+                      className="text-xl font-bold text-white cursor-pointer flex items-center group" 
                       onClick={() => setIsEditingTitle(true)}
                     >
                       {newListTitle || currentList?.title || 'Nowa lista'}
+                      <Edit size={16} className="ml-2 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <span className="ml-2 text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">(kliknij, aby edytować)</span>
                     </h2>
                   )}
                   <button
