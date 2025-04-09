@@ -19,6 +19,8 @@ import {
   Timer,
   Users,
   ListChecks,
+  ChevronLeft,
+  ArrowRight,
 } from 'lucide-react';
 
 // Importujemy komponent widoku zadań i listy do zrobienia
@@ -33,6 +35,8 @@ const Dashboard = ({ initialView = 'home' }) => {
   const [isPinned, setIsPinned] = useState(false);
   const [activeItem, setActiveItem] = useState(initialView);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
 
   const handleMouseEnter = () => {
     if (!isPinned) setIsExpanded(true);
@@ -164,400 +168,415 @@ const Dashboard = ({ initialView = 'home' }) => {
   };
 
   // Renderowanie widoku Home
-  const renderHomeView = () => (
-    <>
-      {/* Header */}
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold text-white">
-          Witaj, <span className="text-primary">Bartek!</span>
-        </h1>
-        <p className="text-gray-400 mt-1">
-          Ostatnie logowanie: dziś, 10:45
-        </p>
-      </header>
+  const renderHomeView = () => {
+    // Funkcja pomocnicza do uzyskania pierwszego dnia miesiąca
+    const getFirstDayOfMonth = (year, month) => {
+      const firstDay = new Date(year, month, 1);
+      return firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; // Korygujemy dni tygodnia (0-6) -> (1-7) z poniedziałkiem jako 0
+    };
 
-      {/* Dashboard Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Lewa kolumna - statystyki i aktywność */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <motion.div 
-              className="bg-dark-100/50 backdrop-blur-sm p-4 rounded-xl border border-dark-100/80 shadow-lg"
-              whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-gray-400 text-sm">Wykonane zadania</p>
-                  <h3 className="text-2xl font-bold text-white mt-1">{stats.completedTasks}</h3>
+    // Funkcja pomocnicza do uzyskania liczby dni w miesiącu
+    const getDaysInMonth = (year, month) => {
+      return new Date(year, month + 1, 0).getDate();
+    };
+
+    // Funkcja pomocnicza do sprawdzania, czy data jest dzisiaj
+    const isToday = (day) => {
+      const today = new Date();
+      return day === today.getDate() && 
+            currentMonth === today.getMonth() && 
+            currentYear === today.getFullYear();
+    };
+
+    // Funkcja do zmiany miesiąca
+    const changeMonth = (increment) => {
+      let newMonth = currentMonth + increment;
+      let newYear = currentYear;
+      
+      if (newMonth < 0) {
+        newMonth = 11;
+        newYear--;
+      } else if (newMonth > 11) {
+        newMonth = 0;
+        newYear++;
+      }
+      
+      setCurrentMonth(newMonth);
+      setCurrentYear(newYear);
+    };
+
+    // Nazwy dni tygodnia
+    const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
+
+    // Nazwy miesięcy
+    const monthNames = [
+      'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 
+      'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
+    ];
+
+    return (
+      <>
+        {/* Header */}
+        <header className="mb-6">
+          <h1 className="text-3xl font-bold text-white">
+            Witaj, <span className="text-primary">Bartek!</span>
+          </h1>
+          <p className="text-gray-400 mt-1">
+            Ostatnie logowanie: dziś, 10:45
+          </p>
+        </header>
+
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Lewa kolumna - statystyki i kalendarz */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <motion.div 
+                className="bg-dark-100/50 backdrop-blur-sm p-4 rounded-xl border border-dark-100/80 shadow-lg"
+                whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-gray-400 text-sm">Wykonane zadania</p>
+                    <h3 className="text-2xl font-bold text-white mt-1">{stats.completedTasks}</h3>
+                  </div>
+                  <div className="bg-green-500/20 p-2 rounded-lg text-green-500">
+                    <CheckCircle2 size={20} />
+                  </div>
                 </div>
-                <div className="bg-green-500/20 p-2 rounded-lg text-green-500">
-                  <CheckCircle2 size={20} />
+                <div className="mt-2 text-green-400 text-xs font-medium flex items-center">
+                  <TrendingUp size={14} className="mr-1" />
+                  <span>+12% w tym tygodniu</span>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="bg-dark-100/50 backdrop-blur-sm p-4 rounded-xl border border-dark-100/80 shadow-lg"
+                whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-gray-400 text-sm">Oczekujące</p>
+                    <h3 className="text-2xl font-bold text-white mt-1">{stats.pendingTasks}</h3>
+                  </div>
+                  <div className="bg-yellow-500/20 p-2 rounded-lg text-yellow-500">
+                    <AlertCircle size={20} />
+                  </div>
+                </div>
+                <div className="mt-2 text-yellow-400 text-xs font-medium flex items-center">
+                  <span>3 z wysokim priorytetem</span>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="bg-dark-100/50 backdrop-blur-sm p-4 rounded-xl border border-dark-100/80 shadow-lg"
+                whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-gray-400 text-sm">Projekty</p>
+                    <h3 className="text-2xl font-bold text-white mt-1">{stats.activeProjects}/{stats.totalProjects}</h3>
+                  </div>
+                  <div className="bg-purple-500/20 p-2 rounded-lg text-purple-500">
+                    <Users size={20} />
+                  </div>
+                </div>
+                <div className="mt-2 text-purple-400 text-xs font-medium flex items-center">
+                  <span>Aktywne projekty</span>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Kalendarz */}
+            <motion.div 
+              className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-white">Twój kalendarz</h3>
+                <div className="flex items-center bg-dark-300/80 rounded-lg p-1.5 border border-dark-100">
+                  <button 
+                    className="p-1.5 mx-1 rounded-lg hover:bg-dark-200/70"
+                    onClick={() => changeMonth(-1)}
+                  >
+                    <ChevronLeft size={16} className="text-gray-400" />
+                  </button>
+                  
+                  <div className="text-white font-medium mx-3 min-w-[100px] text-center">
+                    {monthNames[currentMonth]} {currentYear}
+                  </div>
+                  
+                  <button 
+                    className="p-1.5 mx-1 rounded-lg hover:bg-dark-200/70"
+                    onClick={() => changeMonth(1)}
+                  >
+                    <ChevronRight size={16} className="text-gray-400" />
+                  </button>
                 </div>
               </div>
-              <div className="mt-2 text-green-400 text-xs font-medium flex items-center">
-                <TrendingUp size={14} className="mr-1" />
-                <span>+12% w tym tygodniu</span>
+
+              {/* Uproszczony kalendarz */}
+              <motion.div 
+                className="grid grid-cols-7 gap-1 overflow-hidden rounded-lg border border-primary/30 bg-dark-300/90 cursor-pointer"
+                whileHover={{ scale: 1.01 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setActiveItem('calendar')}
+              >
+                {/* Nagłówki dni tygodnia */}
+                {weekDays.map((day) => (
+                  <div 
+                    key={day} 
+                    className="text-center text-gray-400 font-medium text-sm py-2 border-b border-primary/30"
+                  >
+                    {day}
+                  </div>
+                ))}
+                
+                {/* Dni miesiąca */}
+                {(() => {
+                  const days = [];
+                  const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+                  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+                  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+                  
+                  // Generowanie wszystkich komórek (puste i z dniami)
+                  for (let i = 0; i < totalCells; i++) {
+                    const day = i - firstDay + 1;
+                    
+                    if (day > 0 && day <= daysInMonth) {
+                      const isCurrentDay = isToday(day);
+                      
+                      // Komórka z dniem
+                      days.push(
+                        <motion.div 
+                          key={`day-${day}`}
+                          className={`h-10 flex items-center justify-center text-sm
+                            ${isCurrentDay ? 'bg-primary/30 text-white font-bold' : 'text-gray-300 hover:bg-dark-200/30'}`}
+                          whileHover={{ scale: 1.1 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {day}
+                        </motion.div>
+                      );
+                    } else {
+                      // Pusta komórka
+                      days.push(
+                        <div 
+                          key={`empty-${i}`} 
+                          className="h-10"
+                        ></div>
+                      );
+                    }
+                  }
+                  
+                  return days;
+                })()}
+              </motion.div>
+              <div className="mt-4 text-center">
+                <motion.button
+                  className="inline-flex items-center text-primary text-sm hover:underline"
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setActiveItem('calendar')}
+                >
+                  <span>Przejdź do widoku kalendarza</span>
+                  <ArrowRight size={14} className="ml-1" />
+                </motion.button>
               </div>
             </motion.div>
 
+            {/* Recent Projects */}
             <motion.div 
-              className="bg-dark-100/50 backdrop-blur-sm p-4 rounded-xl border border-dark-100/80 shadow-lg"
-              whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
-              transition={{ duration: 0.2 }}
+              className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-gray-400 text-sm">Oczekujące</p>
-                  <h3 className="text-2xl font-bold text-white mt-1">{stats.pendingTasks}</h3>
-                </div>
-                <div className="bg-yellow-500/20 p-2 rounded-lg text-yellow-500">
-                  <AlertCircle size={20} />
-                </div>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-white">Ostatnie projekty</h3>
+                <a href="#" className="text-primary text-sm hover:underline">Zobacz wszystkie</a>
               </div>
-              <div className="mt-2 text-yellow-400 text-xs font-medium flex items-center">
-                <span>3 z wysokim priorytetem</span>
-              </div>
-            </motion.div>
 
-            <motion.div 
-              className="bg-dark-100/50 backdrop-blur-sm p-4 rounded-xl border border-dark-100/80 shadow-lg"
-              whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-gray-400 text-sm">Poświęcony czas</p>
-                  <h3 className="text-2xl font-bold text-white mt-1">{stats.timeSpent}h</h3>
-                </div>
-                <div className="bg-blue-500/20 p-2 rounded-lg text-blue-500">
-                  <Timer size={20} />
-                </div>
-              </div>
-              <div className="mt-2 text-blue-400 text-xs font-medium flex items-center">
-                <span>W tym tygodniu</span>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              className="bg-dark-100/50 backdrop-blur-sm p-4 rounded-xl border border-dark-100/80 shadow-lg"
-              whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-gray-400 text-sm">Projekty</p>
-                  <h3 className="text-2xl font-bold text-white mt-1">{stats.activeProjects}/{stats.totalProjects}</h3>
-                </div>
-                <div className="bg-purple-500/20 p-2 rounded-lg text-purple-500">
-                  <Users size={20} />
-                </div>
-              </div>
-              <div className="mt-2 text-purple-400 text-xs font-medium flex items-center">
-                <span>Aktywne projekty</span>
+              <div className="space-y-4">
+                {recentProjects.map((project) => (
+                  <motion.div 
+                    key={project.id}
+                    className="p-4 bg-dark-200/70 rounded-lg hover:bg-dark-200"
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-white font-semibold">{project.name}</h4>
+                        <div className="flex items-center mt-1 space-x-3">
+                          <div className="flex items-center">
+                            <Calendar size={14} className="text-gray-400 mr-1" />
+                            <span className="text-xs text-gray-400">
+                              {formatDate(project.deadline)}
+                            </span>
+                          </div>
+                          <div className={`text-xs font-medium ${getPriorityColor(project.priority)}`}>
+                            {project.priority}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-sm font-semibold text-white">{project.progress}%</div>
+                    </div>
+                    
+                    <div className="mt-3 relative w-full h-1.5 bg-dark-300 rounded-full overflow-hidden">
+                      <motion.div 
+                        className={`absolute top-0 left-0 h-full ${getProgressColor(project.progress)}`}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${project.progress}%` }}
+                        transition={{ duration: 1 }}
+                      ></motion.div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </motion.div>
           </div>
 
-          {/* Productivity Chart */}
-          <motion.div 
-            className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-white">Aktywność w tym tygodniu</h3>
-              <div className="flex space-x-4">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
-                  <span className="text-sm text-gray-400">Godziny</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                  <span className="text-sm text-gray-400">Ukończone zadania</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative h-64">
-              {/* Linie pomocnicze */}
-              <div className="absolute inset-0 flex flex-col justify-between">
-                {[1, 0.75, 0.5, 0.25, 0].map((val, i) => (
-                  <div 
-                    key={i} 
-                    className="w-full h-px bg-gray-700 relative"
-                  >
-                    <span className="absolute -top-2.5 -left-8 text-xs text-gray-500">
-                      {Math.round(maxActivityValue * val)}h
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Wykresy słupkowe */}
-              <div className="absolute inset-0 flex items-end justify-between pt-5">
-                {weeklyActivity.map((day, i) => (
-                  <div key={i} className="flex flex-col items-center w-full">
-                    {/* Słupek godzin */}
-                    <motion.div 
-                      className="w-5 rounded-t-md bg-primary bg-opacity-80"
-                      style={{ height: `${(day.hours / maxActivityValue) * 100}%` }}
-                      initial={{ height: 0 }}
-                      animate={{ height: `${(day.hours / maxActivityValue) * 100}%` }}
-                      transition={{ duration: 1, delay: i * 0.1 }}
-                    >
-                      <div className="text-xs text-white font-medium mt-2 opacity-0 group-hover:opacity-100">
-                        {day.hours}h
-                      </div>
-                    </motion.div>
-
-                    {/* Słupek zadań (przesunięty w prawo) */}
-                    <motion.div 
-                      className="w-5 ml-6 rounded-t-md bg-green-500 bg-opacity-80 absolute bottom-0"
-                      style={{ 
-                        height: `${(day.completed / 12) * 100}%`,
-                        left: `calc(${i * (100 / weeklyActivity.length)}% + 10px)` 
-                      }}
-                      initial={{ height: 0 }}
-                      animate={{ height: `${(day.completed / 12) * 100}%` }}
-                      transition={{ duration: 1, delay: i * 0.1 + 0.3 }}
-                    ></motion.div>
-
-                    {/* Etykieta dnia */}
-                    <div className="text-xs text-gray-400 mt-2">{day.day}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Recent Projects */}
-          <motion.div 
-            className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-white">Ostatnie projekty</h3>
-              <a href="#" className="text-primary text-sm hover:underline">Zobacz wszystkie</a>
-            </div>
-
-            <div className="space-y-4">
-              {recentProjects.map((project) => (
-                <motion.div 
-                  key={project.id}
-                  className="p-4 bg-dark-200/70 rounded-lg hover:bg-dark-200"
-                  whileHover={{ x: 5 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-white font-semibold">{project.name}</h4>
-                      <div className="flex items-center mt-1 space-x-3">
-                        <div className="flex items-center">
-                          <Calendar size={14} className="text-gray-400 mr-1" />
-                          <span className="text-xs text-gray-400">
-                            {formatDate(project.deadline)}
-                          </span>
-                        </div>
-                        <div className={`text-xs font-medium ${getPriorityColor(project.priority)}`}>
-                          {project.priority}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-sm font-semibold text-white">{project.progress}%</div>
-                  </div>
-                  
-                  <div className="mt-3 relative w-full h-1.5 bg-dark-300 rounded-full overflow-hidden">
-                    <motion.div 
-                      className={`absolute top-0 left-0 h-full ${getProgressColor(project.progress)}`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${project.progress}%` }}
-                      transition={{ duration: 1 }}
-                    ></motion.div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Prawa kolumna - nadchodzące zadania i statystyki */}
-        <div className="space-y-6">
-          {/* Produktywność */}
-          <motion.div 
-            className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">Produktywność</h3>
-            
-            <div className="relative pt-5">
-              <svg className="w-full" height="160" viewBox="0 0 160 160">
-                <circle 
-                  cx="80" 
-                  cy="80" 
-                  r="70" 
-                  fill="none" 
-                  stroke="#1E1E2F" 
-                  strokeWidth="15"
-                />
-                <motion.circle 
-                  cx="80" 
-                  cy="80" 
-                  r="70"
-                  fill="none" 
-                  stroke="#A78BFA" 
-                  strokeWidth="15"
-                  strokeLinecap="round"
-                  strokeDasharray="440"
-                  strokeDashoffset="440"
-                  initial={{ strokeDashoffset: 440 }}
-                  animate={{ 
-                    strokeDashoffset: 440 - (440 * stats.productivity / 100)
-                  }}
-                  transition={{ duration: 2, ease: "easeInOut" }}
-                  transform="rotate(-90 80 80)"
-                />
-                <text 
-                  x="80" 
-                  y="85" 
-                  textAnchor="middle" 
-                  fontSize="28" 
-                  fontWeight="bold"
-                  fill="white"
-                >
-                  {stats.productivity}%
-                </text>
-              </svg>
-            </div>
-            
-            <div className="mt-4 flex justify-between items-center text-sm">
-              <div className="text-gray-400">Twój cel: 85%</div>
-              <div className="text-primary font-medium">+2% od zeszłego tygodnia</div>
-            </div>
-          </motion.div>
-
-          {/* Upcoming Tasks */}
-          <motion.div 
-            className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-white">Nadchodzące zadania</h3>
-              <button 
-                className="text-primary text-sm hover:underline"
-                onClick={() => setActiveItem('tasks')}
+          {/* Prawa kolumna - nadchodzące zadania i informacje */}
+          <div className="space-y-6">
+            {/* Dzisiejsza data z animacją */}
+            <motion.div 
+              className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <h3 className="text-lg font-semibold text-white mb-4">Dzisiaj</h3>
+              
+              <motion.div 
+                className="relative flex items-center justify-center p-6"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
               >
-                Zobacz więcej
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {upcomingTasks.map((task, index) => (
-                <motion.div 
-                  key={task.id} 
-                  className="flex items-center p-3 rounded-lg hover:bg-dark-200/70"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  whileHover={{ x: 3 }}
-                >
-                  <div className="flex-shrink-0 mr-3">
-                    <div className="w-9 h-9 rounded-full bg-dark-200 flex items-center justify-center border border-dark-100">
-                      <Clock3 size={16} className="text-primary" />
-                    </div>
-                  </div>
-                  <div className="flex-grow">
-                    <h4 className="text-white text-sm font-medium">{task.name}</h4>
-                    <p className="text-gray-400 text-xs mt-0.5">{task.dueDate}</p>
-                  </div>
-                  <motion.button 
-                    className="flex-shrink-0 w-8 h-8 rounded-full hover:bg-dark-200 flex items-center justify-center"
-                    whileTap={{ scale: 0.9 }}
+                <div className="absolute w-32 h-32 rounded-full border-4 border-primary/20"></div>
+                <div className="absolute w-24 h-24 rounded-full border-2 border-primary/40"></div>
+                
+                <div className="bg-dark-200/90 rounded-full p-6 relative z-10">
+                  <motion.div 
+                    className="text-center text-white"
+                    initial={{ scale: 0.9 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
                   >
-                    <CheckSquare size={15} className="text-gray-400 hover:text-primary" />
-                  </motion.button>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+                    <div className="text-3xl font-bold">
+                      {new Date().getDate()}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {new Date().toLocaleDateString('pl-PL', { month: 'long' })}
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+              
+              <p className="text-center text-gray-300 mt-4">
+                {new Date().toLocaleDateString('pl-PL', { 
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long', 
+                  year: 'numeric'
+                })}
+              </p>
+            </motion.div>
 
-          {/* Task Breakdown */}
-          <motion.div 
-            className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <h3 className="text-lg font-semibold text-white mb-4">Podział zadań</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    <span className="text-sm text-gray-300">Ukończone</span>
-                  </div>
-                  <span className="text-sm text-white font-medium">38</span>
-                </div>
-                <div className="w-full h-2 bg-dark-200 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-green-500"
-                    initial={{ width: 0 }}
-                    animate={{ width: '76%' }}
-                    transition={{ duration: 1 }}
-                  ></motion.div>
-                </div>
+            {/* Upcoming Tasks */}
+            <motion.div 
+              className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-white">Nadchodzące zadania</h3>
+                <button 
+                  className="text-primary text-sm hover:underline"
+                  onClick={() => setActiveItem('tasks')}
+                >
+                  Zobacz więcej
+                </button>
               </div>
+
+              <div className="space-y-3">
+                {upcomingTasks.map((task, index) => (
+                  <motion.div 
+                    key={task.id} 
+                    className="flex items-center p-3 rounded-lg hover:bg-dark-200/70"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    whileHover={{ x: 3 }}
+                  >
+                    <div className="flex-shrink-0 mr-3">
+                      <div className="w-9 h-9 rounded-full bg-dark-200 flex items-center justify-center border border-dark-100">
+                        <Clock3 size={16} className="text-primary" />
+                      </div>
+                    </div>
+                    <div className="flex-grow">
+                      <h4 className="text-white text-sm font-medium">{task.name}</h4>
+                      <p className="text-gray-400 text-xs mt-0.5">{task.dueDate}</p>
+                    </div>
+                    <motion.button 
+                      className="flex-shrink-0 w-8 h-8 rounded-full hover:bg-dark-200 flex items-center justify-center"
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <CheckSquare size={15} className="text-gray-400 hover:text-primary" />
+                    </motion.button>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Inspirujący cytat z animacją */}
+            <motion.div 
+              className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg overflow-hidden relative"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <motion.div
+                className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full"
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.2, 0.3]
+                }}
+                transition={{ duration: 8, repeat: Infinity }}
+              />
               
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                    <span className="text-sm text-gray-300">W trakcie</span>
-                  </div>
-                  <span className="text-sm text-white font-medium">8</span>
-                </div>
-                <div className="w-full h-2 bg-dark-200 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-yellow-500"
-                    initial={{ width: 0 }}
-                    animate={{ width: '16%' }}
-                    transition={{ duration: 1, delay: 0.3 }}
-                  ></motion.div>
-                </div>
-              </div>
+              <motion.div
+                className="absolute -left-20 -bottom-20 w-60 h-60 bg-primary/5 rounded-full"
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  opacity: [0.2, 0.3, 0.2]
+                }}
+                transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+              />
               
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    <span className="text-sm text-gray-300">Zaległe</span>
-                  </div>
-                  <span className="text-sm text-white font-medium">4</span>
-                </div>
-                <div className="w-full h-2 bg-dark-200 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-red-500"
-                    initial={{ width: 0 }}
-                    animate={{ width: '8%' }}
-                    transition={{ duration: 1, delay: 0.6 }}
-                  ></motion.div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+              <h3 className="text-lg font-semibold text-white mb-4 relative z-10">Inspiracja na dziś</h3>
+              
+              <blockquote className="relative z-10">
+                <p className="text-gray-300 italic">
+                  "Nie ma znaczenia, jak wolno idziesz, dopóki się nie zatrzymujesz."
+                </p>
+                <footer className="text-primary text-sm mt-3 font-medium">
+                  — Konfucjusz
+                </footer>
+              </blockquote>
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </>
-  );
+      </>
+    );
+  };
 
   // Zaktualizuj useEffect, aby reagował na zmianę initialView
   useEffect(() => {
