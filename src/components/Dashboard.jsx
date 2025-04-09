@@ -37,6 +37,7 @@ const Dashboard = ({ initialView = 'home' }) => {
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [calendarTasks, setCalendarTasks] = useState([]);
 
   const handleMouseEnter = () => {
     if (!isPinned) setIsExpanded(true);
@@ -74,6 +75,52 @@ const Dashboard = ({ initialView = 'home' }) => {
       delete window.createChecklistForTask;
     };
   }, []);
+
+  // Dodajemy przykładowe zadania kalendarza (takie same jak w CalendarView)
+  useEffect(() => {
+    const sampleTasks = [
+      { id: 1, title: "Spotkanie z klientem", date: "2025-04-10", priority: "Wysoki", description: "Spotkanie w sprawie nowego projektu i omówienie terminu realizacji." },
+      { id: 2, title: "Termin projektu", date: "2025-04-15", priority: "Krytyczny", description: "Ostateczny termin oddania projektu TimeManager." },
+      { id: 3, title: "Przygotować prezentację", date: "2025-04-09", priority: "Średni", description: "Przygotowanie prezentacji na spotkanie z zarządem." },
+      { id: 4, title: "Rozmowa telefoniczna", date: "2025-04-12", priority: "Niski", description: "Rozmowa z klientem XYZ odnośnie nowych wymagań." },
+      { id: 5, title: "Aktualizacja dokumentacji", date: "2025-04-18", priority: "Średni", description: "Aktualizacja dokumentacji technicznej dla systemu." },
+      { id: 6, title: "Przegląd kodu", date: "2025-04-09", priority: "Wysoki", description: "Code review dla ostatnich zmian w projekcie." },
+      { id: 7, title: "Oddanie raportu", date: "2025-04-20", priority: "Krytyczny", description: "Raport z postępu prac za pierwszy kwartał." },
+      { id: 8, title: "Spotkanie zespołu", date: "2025-04-22", priority: "Średni", description: "Cotygodniowe spotkanie zespołu projektowego." }
+    ];
+
+    // Przypisujemy zadaniom daty w bieżącym miesiącu i roku
+    updateTaskDates(sampleTasks);
+  }, []);
+
+  // Funkcja do aktualizacji dat zadań dla wybranego miesiąca i roku
+  const updateTaskDates = (tasks) => {
+    // Aktualizacja roku i miesiąca w datach zadań na aktualny
+    const updatedTasks = tasks.map(task => {
+      const taskDate = new Date(task.date);
+      taskDate.setFullYear(currentYear);
+      taskDate.setMonth(currentMonth);
+      
+      // Losowy dzień w bieżącym miesiącu z uwzględnieniem liczby dni
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      taskDate.setDate(Math.floor(Math.random() * daysInMonth) + 1);
+      
+      return { 
+        ...task, 
+        date: taskDate.toISOString().split('T')[0] // Format YYYY-MM-DD
+      };
+    });
+    
+    setCalendarTasks(updatedTasks);
+  };
+
+  // Aktualizujemy zadania przy zmianie miesiąca lub roku
+  useEffect(() => {
+    // Używamy poprzednich zadań jako bazy
+    if (calendarTasks.length > 0) {
+      updateTaskDates([...calendarTasks]);
+    }
+  }, [currentMonth, currentYear]);
 
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
@@ -135,8 +182,13 @@ const Dashboard = ({ initialView = 'home' }) => {
     return 'text-blue-400';
   };
 
-  // Funkcja do formatowania daty
-  const formatDate = (dateString) => {
+  // Funkcja do formatowania daty w formacie YYYY-MM-DD
+  const formatDate = (year, month, day) => {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  };
+
+  // Funkcja do formatowania daty w czytelny sposób dla UI
+  const formatDateLocale = (dateString) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('pl-PL', {
       year: 'numeric',
@@ -147,6 +199,49 @@ const Dashboard = ({ initialView = 'home' }) => {
 
   // Obliczenie najwyższej wartości w danych aktywności
   const maxActivityValue = Math.max(...weeklyActivity.map(day => day.hours)) * 1.2;
+
+  // Funkcja do pobierania zadań dla danego dnia
+  const getTasksForDay = (day) => {
+    const dateStr = formatDate(currentYear, currentMonth, day);
+    return calendarTasks.filter(task => task.date === dateStr);
+  };
+
+  // Funkcja pomocnicza zwracająca kolor dla priorytetu
+  const getPriorityDotColor = (priority) => {
+    switch (priority) {
+      case 'Krytyczny': return 'bg-red-500';
+      case 'Wysoki': return 'bg-orange-500';
+      case 'Średni': return 'bg-yellow-500';
+      case 'Niski': return 'bg-blue-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  // Funkcja do zmiany miesiąca
+  const changeMonth = (increment) => {
+    let newMonth = currentMonth + increment;
+    let newYear = currentYear;
+    
+    if (newMonth < 0) {
+      newMonth = 11;
+      newYear--;
+    } else if (newMonth > 11) {
+      newMonth = 0;
+      newYear++;
+    }
+    
+    setCurrentMonth(newMonth);
+    setCurrentYear(newYear);
+  };
+
+  // Nazwy dni tygodnia
+  const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
+
+  // Nazwy miesięcy
+  const monthNames = [
+    'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 
+    'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
+  ];
 
   // Renderowanie odpowiedniego widoku w zależności od wybranej zakładki
   const renderView = () => {
@@ -187,32 +282,6 @@ const Dashboard = ({ initialView = 'home' }) => {
             currentMonth === today.getMonth() && 
             currentYear === today.getFullYear();
     };
-
-    // Funkcja do zmiany miesiąca
-    const changeMonth = (increment) => {
-      let newMonth = currentMonth + increment;
-      let newYear = currentYear;
-      
-      if (newMonth < 0) {
-        newMonth = 11;
-        newYear--;
-      } else if (newMonth > 11) {
-        newMonth = 0;
-        newYear++;
-      }
-      
-      setCurrentMonth(newMonth);
-      setCurrentYear(newYear);
-    };
-
-    // Nazwy dni tygodnia
-    const weekDays = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
-
-    // Nazwy miesięcy
-    const monthNames = [
-      'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 
-      'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
-    ];
 
     return (
       <>
@@ -293,100 +362,212 @@ const Dashboard = ({ initialView = 'home' }) => {
 
             {/* Kalendarz */}
             <motion.div 
-              className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg"
+              className="bg-dark-100/50 backdrop-blur-sm p-6 rounded-xl border border-dark-100/80 shadow-lg overflow-hidden"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
+              whileHover={{ boxShadow: "0 15px 30px -10px rgba(0, 0, 0, 0.3)" }}
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-white">Twój kalendarz</h3>
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                  <Calendar size={18} className="text-primary mr-2" />
+                  Twój kalendarz
+                </h3>
                 <div className="flex items-center bg-dark-300/80 rounded-lg p-1.5 border border-dark-100">
-                  <button 
+                  <motion.button 
                     className="p-1.5 mx-1 rounded-lg hover:bg-dark-200/70"
                     onClick={() => changeMonth(-1)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
                     <ChevronLeft size={16} className="text-gray-400" />
-                  </button>
+                  </motion.button>
                   
-                  <div className="text-white font-medium mx-3 min-w-[100px] text-center">
+                  <motion.div 
+                    className="text-white font-medium mx-3 min-w-[120px] text-center"
+                    key={`${currentMonth}-${currentYear}`}
+                    initial={{ y: -10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 10, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     {monthNames[currentMonth]} {currentYear}
-                  </div>
+                  </motion.div>
                   
-                  <button 
+                  <motion.button 
                     className="p-1.5 mx-1 rounded-lg hover:bg-dark-200/70"
                     onClick={() => changeMonth(1)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
                     <ChevronRight size={16} className="text-gray-400" />
-                  </button>
+                  </motion.button>
                 </div>
               </div>
 
               {/* Uproszczony kalendarz */}
               <motion.div 
-                className="grid grid-cols-7 gap-1 overflow-hidden rounded-lg border border-primary/30 bg-dark-300/90 cursor-pointer"
+                className="relative rounded-xl border border-primary/30 bg-dark-300/80 overflow-hidden"
                 whileHover={{ scale: 1.01 }}
-                transition={{ duration: 0.2 }}
-                onClick={() => setActiveItem('calendar')}
+                transition={{ duration: 0.3 }}
               >
-                {/* Nagłówki dni tygodnia */}
-                {weekDays.map((day) => (
-                  <div 
-                    key={day} 
-                    className="text-center text-gray-400 font-medium text-sm py-2 border-b border-primary/30"
-                  >
-                    {day}
-                  </div>
-                ))}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"
+                  animate={{ 
+                    opacity: [0.5, 0.3, 0.5],
+                  }}
+                  transition={{ duration: 8, repeat: Infinity }}
+                />
                 
-                {/* Dni miesiąca */}
-                {(() => {
-                  const days = [];
-                  const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
-                  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-                  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+                <div className="grid grid-cols-7 relative z-10">
+                  {/* Nagłówki dni tygodnia */}
+                  {weekDays.map((day) => (
+                    <div 
+                      key={day} 
+                      className="text-center font-medium text-sm py-3 border-b border-primary/30 bg-dark-300/50"
+                    >
+                      <span className="text-primary">{day.charAt(0)}</span>
+                      <span className="text-gray-400">{day.slice(1)}</span>
+                    </div>
+                  ))}
                   
-                  // Generowanie wszystkich komórek (puste i z dniami)
-                  for (let i = 0; i < totalCells; i++) {
-                    const day = i - firstDay + 1;
+                  {/* Dni miesiąca */}
+                  {(() => {
+                    const days = [];
+                    const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+                    const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+                    const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
                     
-                    if (day > 0 && day <= daysInMonth) {
-                      const isCurrentDay = isToday(day);
+                    // Generowanie wszystkich komórek (puste i z dniami)
+                    for (let i = 0; i < totalCells; i++) {
+                      const day = i - firstDay + 1;
                       
-                      // Komórka z dniem
-                      days.push(
-                        <motion.div 
-                          key={`day-${day}`}
-                          className={`h-10 flex items-center justify-center text-sm
-                            ${isCurrentDay ? 'bg-primary/30 text-white font-bold' : 'text-gray-300 hover:bg-dark-200/30'}`}
-                          whileHover={{ scale: 1.1 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {day}
-                        </motion.div>
-                      );
-                    } else {
-                      // Pusta komórka
-                      days.push(
-                        <div 
-                          key={`empty-${i}`} 
-                          className="h-10"
-                        ></div>
-                      );
+                      if (day > 0 && day <= daysInMonth) {
+                        const isCurrentDay = isToday(day);
+                        const dayTasks = getTasksForDay(day);
+                        
+                        // Komórka z dniem
+                        days.push(
+                          <motion.div 
+                            key={`day-${day}`}
+                            className={`group h-12 flex flex-col items-center justify-center cursor-pointer relative
+                              ${isCurrentDay ? 'text-white font-bold' : 'text-gray-300 hover:text-white'}`}
+                            whileHover={{ 
+                              backgroundColor: "rgba(168, 85, 247, 0.15)",
+                              scale: 1.05
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={() => setActiveItem('calendar')}
+                          >
+                            {isCurrentDay && (
+                              <motion.div 
+                                className="absolute w-8 h-8 bg-primary/30 rounded-full -z-10"
+                                animate={{ 
+                                  scale: [1, 1.1, 1],
+                                  boxShadow: [
+                                    "0 0 0 0 rgba(168, 85, 247, 0.7)",
+                                    "0 0 0 8px rgba(168, 85, 247, 0)",
+                                    "0 0 0 0 rgba(168, 85, 247, 0.7)"
+                                  ]
+                                }}
+                                transition={{ duration: 2.5, repeat: Infinity }}
+                              />
+                            )}
+                            <span className="text-sm relative z-10">{day}</span>
+                            
+                            {/* Wskaźniki zadań */}
+                            {dayTasks.length > 0 && (
+                              <>
+                                <div className="flex justify-center mt-1 space-x-1">
+                                  {dayTasks.slice(0, 3).map((task, idx) => (
+                                    <motion.div 
+                                      key={idx}
+                                      className={`w-1.5 h-1.5 rounded-full ${getPriorityDotColor(task.priority)}`}
+                                      initial={{ scale: 0, opacity: 0 }}
+                                      animate={{ scale: 1, opacity: 1 }}
+                                      transition={{ duration: 0.3, delay: idx * 0.1 }}
+                                    />
+                                  ))}
+                                  {dayTasks.length > 3 && (
+                                    <motion.div 
+                                      className="w-1.5 h-1.5 rounded-full bg-gray-400"
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      transition={{ duration: 0.3, delay: 0.3 }}
+                                    />
+                                  )}
+                                </div>
+                                
+                                {/* Podgląd zadań po najechaniu */}
+                                <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 z-50 hidden group-hover:block">
+                                  <motion.div 
+                                    className="bg-dark-100 p-3 rounded-lg border border-primary/60 shadow-xl w-[220px]"
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                  >
+                                    <div className="text-xs font-medium text-primary mb-2 flex items-center justify-between">
+                                      <span>{day} {monthNames[currentMonth]} {currentYear}</span>
+                                      <span className="text-gray-400 text-[10px] bg-dark-200 px-1.5 py-0.5 rounded-full">{dayTasks.length} zadań</span>
+                                    </div>
+                                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                                      {dayTasks.map((task, idx) => (
+                                        <div 
+                                          key={idx} 
+                                          className="border-l-2 pl-2 py-1 hover:bg-dark-200/50 rounded-r transition-colors" 
+                                          style={{ borderColor: getPriorityDotColor(task.priority).replace('bg-', '') }}
+                                        >
+                                          <div className="text-xs font-medium text-white">{task.title}</div>
+                                          <div className="text-[10px] text-gray-400 truncate">{task.description}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="text-center mt-2 pt-2 border-t border-dark-200">
+                                      <button 
+                                        className="text-[10px] text-primary hover:underline"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveItem('calendar');
+                                        }}
+                                      >
+                                        Zobacz w kalendarzu
+                                      </button>
+                                    </div>
+                                  </motion.div>
+                                </div>
+                              </>
+                            )}
+                          </motion.div>
+                        );
+                      } else {
+                        // Pusta komórka
+                        days.push(
+                          <div 
+                            key={`empty-${i}`} 
+                            className="h-12"
+                          ></div>
+                        );
+                      }
                     }
-                  }
-                  
-                  return days;
-                })()}
+                    
+                    return days;
+                  })()}
+                </div>
               </motion.div>
+              
               <div className="mt-4 text-center">
                 <motion.button
-                  className="inline-flex items-center text-primary text-sm hover:underline"
-                  whileHover={{ x: 5 }}
+                  className="inline-flex items-center text-primary text-sm hover:text-primary/80 bg-dark-300/50 px-4 py-2 rounded-lg"
+                  whileHover={{ 
+                    x: 5,
+                    backgroundColor: "rgba(168, 85, 247, 0.2)"
+                  }}
                   transition={{ duration: 0.2 }}
                   onClick={() => setActiveItem('calendar')}
                 >
-                  <span>Przejdź do widoku kalendarza</span>
-                  <ArrowRight size={14} className="ml-1" />
+                  <span>Przejdź do pełnego kalendarza</span>
+                  <ArrowRight size={14} className="ml-2" />
                 </motion.button>
               </div>
             </motion.div>
@@ -418,7 +599,7 @@ const Dashboard = ({ initialView = 'home' }) => {
                           <div className="flex items-center">
                             <Calendar size={14} className="text-gray-400 mr-1" />
                             <span className="text-xs text-gray-400">
-                              {formatDate(project.deadline)}
+                              {formatDateLocale(project.deadline)}
                             </span>
                           </div>
                           <div className={`text-xs font-medium ${getPriorityColor(project.priority)}`}>
