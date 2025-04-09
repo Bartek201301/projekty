@@ -478,8 +478,11 @@ const TasksView = () => {
 
   // Funkcja nawigująca do widoku listy zadań
   const goToChecklist = (taskId) => {
-    // Tutaj powinna być logika nawigacji do widoku listy zadań
-    console.log(`Navigating to checklist for task ${taskId}`);
+    if (window.navigateToChecklist) {
+      window.navigateToChecklist(taskId);
+    } else {
+      console.log(`Navigating to checklist for task ${taskId}`);
+    }
   };
 
   // Przykładowe dane zadań

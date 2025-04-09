@@ -22,7 +22,14 @@ import {
   ArrowUp,
   Pencil,
   GripVertical,
-  ArrowLeft
+  ArrowLeft,
+  CheckCircle,
+  AlignLeft,
+  Star,
+  MoreVertical,
+  Tag,
+  Clock3,
+  Trash
 } from 'lucide-react';
 
 const ChecklistView = ({ selectedTaskId = null }) => {
@@ -449,21 +456,19 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     }
   };
 
-  // Toggle the expanded state for adding a new item
+  // Funkcja do rozwijania listy i dodawania nowego elementu
   const toggleListExpand = (listId) => {
-    // Make sure we're working with numbers for proper comparison
-    const numericListId = Number(listId);
-    const numericExpandedId = expandedListId !== null ? Number(expandedListId) : null;
+    const clickedListId = Number(listId);
     
-    // If we're expanding a list different from the currently expanded one
-    if (numericExpandedId !== numericListId) {
-      setExpandedListId(numericListId);
-    } else {
-      // If it's the same list, toggle it
+    // Jeśli klikamy na tę samą listę, zamykamy pole dodawania
+    if (expandedListId === clickedListId) {
       setExpandedListId(null);
+    } else {
+      // W przeciwnym razie otwieramy pole dodawania dla wybranej listy
+      setExpandedListId(clickedListId);
     }
     
-    // Reset text and editing states when toggling
+    // Resetujemy wszystkie stany edycji
     setNewListText('');
     setEditingItemId(null);
     setEditingListId(null);
@@ -557,17 +562,19 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     }));
   };
 
-  // Add new item to a specific list with guaranteed unique ID
+  // Dodawanie nowego elementu do listy
   const addItemToList = (listId) => {
+    // Walidacja tekstu
     if (!newListText.trim()) return;
     
     const numericListId = Number(listId);
     
-    // Generate a globally unique ID across all lists
+    // Wygeneruj unikalny ID dla nowego elementu
     const allItems = checklistLists.flatMap(list => list.items);
     const maxItemId = allItems.length > 0 ? Math.max(...allItems.map(item => item.id)) : 0;
     const newItemId = maxItemId + 1;
     
+    // Aktualizacja listy
     setChecklistLists(checklistLists.map(list => {
       if (list.id === numericListId) {
         const newItem = {
@@ -585,9 +592,8 @@ const ChecklistView = ({ selectedTaskId = null }) => {
       return list;
     }));
     
+    // Resetujemy pole tekstowe, ale pozostawiamy listę rozwiniętą
     setNewListText('');
-    // Close the input field after adding an item
-    setExpandedListId(null);
   };
 
   // Handle keydown in the new item input field
@@ -647,15 +653,7 @@ const ChecklistView = ({ selectedTaskId = null }) => {
 
   // Handle blur for item input
   const handleItemInputBlur = (listId) => {
-    const numericListId = Number(listId);
-    
-    if (newListText.trim()) {
-      addItemToList(numericListId);
-    } else {
-      setExpandedListId(null);
-      setEditingItemId(null);
-      setEditingListId(null);
-    }
+    // Nie robimy nic przy utracie fokusa, aby użytkownik mógł kliknąć przycisk "Dodaj"
   };
 
   // Handle keydown for title edit
@@ -669,244 +667,117 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     }
   };
 
-  // Renderowanie kafelka listy
+  // Renderowanie płytki listy
   const renderListTile = (list) => {
-    const progress = getListProgress(list);
-    const relatedTask = getRelatedTask(list.taskId);
-    // Ensure we're comparing numbers
-    const isExpanded = Number(expandedListId) === Number(list.id);
-    const isEditingThisTitle = Number(editingTitleId) === Number(list.id);
+    // Obliczanie procentu ukończenia zadań
+    const totalItems = list.items.length;
+    const completedItems = list.items.filter(item => item.completed).length;
+    const completionPercentage = totalItems > 0 
+      ? Math.round((completedItems / totalItems) * 100) 
+      : 0;
+    
+    // Znajdowanie powiązanego zadania
+    const relatedTask = tasks.find(task => task.id === list.taskId);
     
     return (
-      <motion.div
-        key={list.id}
-        className="bg-dark-100 rounded-lg border border-dark-100/50 shadow-md overflow-visible w-[275px] flex flex-col relative"
-        style={{ height: 'auto' }}
-        whileHover={{ y: -3, boxShadow: "0 6px 16px -4px rgba(0, 0, 0, 0.3)" }}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2 }}
+      <div 
+        className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden shadow transition-all hover:shadow-md"
       >
-        <div className="p-4 pb-10 flex-grow flex flex-col">
-          <div className="flex justify-between items-start mb-3">
-            {isEditingThisTitle ? (
-              <input
-                type="text"
-                className="flex-grow bg-dark-200/70 border border-dark-200 rounded px-2 py-1 text-white text-lg focus:outline-none focus:ring-1 focus:ring-primary"
-                value={editingTitle}
-                onChange={(e) => setEditingTitle(e.target.value)}
-                onKeyDown={(e) => handleTitleEditKeyDown(e, list.id)}
-                onBlur={() => handleTitleBlur(list.id)}
-                autoFocus
-              />
-            ) : (
-              <h3 className="font-medium text-white text-lg line-clamp-1">{list.title}</h3>
-            )}
-            <div className="flex items-center">
-              <button 
-                className="text-gray-400 hover:text-white p-1 rounded-full mr-1"
+        {/* Nagłówek listy */}
+        <div className="p-4 bg-indigo-600">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-bold text-lg text-white truncate pr-2">{list.title}</h3>
+            <div className="flex items-center gap-1">
+              <button
+                className="p-1.5 hover:bg-indigo-500/40 rounded-full text-white/80 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
-                  startTitleEdit(list.id, list.title);
+                  editItemInList(list.id, null);
                 }}
               >
-                <Edit size={14} />
+                <Pencil size={15} />
               </button>
-              <button 
-                className="text-gray-400 hover:text-white p-1 rounded-full"
+              <button
+                className="p-1.5 hover:bg-indigo-500/40 rounded-full text-white/80 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   initiateDeleteList(list.id);
                 }}
               >
-                <Trash2 size={14} />
+                <Trash size={15} />
               </button>
             </div>
           </div>
           
-          <div className="flex-grow">
-            <ul className="text-sm text-gray-300 space-y-2">
-              {list.items.map((item, index) => {
-                // Check if this specific item in this specific list is being edited
-                const isEditingThisItem = Number(editingItemId) === Number(item.id) && Number(editingListId) === Number(list.id);
-                
-                return (
-                  <li key={`${list.id}-${item.id}`} className="flex items-center py-1 group">
-                    <button 
-                      className="mr-2 flex-shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleItemInList(list.id, item.id);
-                      }}
-                    >
-                      {item.completed ? (
-                        <CheckCircle2 size={20} className="text-green-500" />
-                      ) : (
-                        <Circle size={20} className="text-gray-400" />
-                      )}
-                    </button>
-                    
-                    {isEditingThisItem ? (
-                      <div className="flex-grow flex items-center bg-dark-200/50 rounded px-2">
-                        <input
-                          type="text"
-                          className="flex-grow bg-transparent border-none py-1 focus:outline-none focus:ring-0 text-white"
-                          value={newListText}
-                          onChange={(e) => setNewListText(e.target.value)}
-                          onKeyDown={(e) => handleEditKeyDown(e, list.id, item.id)}
-                          onBlur={() => saveEditedItem(list.id, item.id)}
-                          autoFocus
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <span 
-                          className={`flex-grow text-base ${item.completed ? 'line-through text-gray-500' : 'text-white'}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleItemInList(list.id, item.id);
-                          }}
-                        >
-                          {item.text}
-                        </span>
-                        
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            className="text-gray-400 hover:text-primary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              editItemInList(list.id, item.id);
-                            }}
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button 
-                            className="text-gray-400 hover:text-red-500"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeItemFromSpecificList(list.id, item.id);
-                            }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </li>
-                );
-              })}
-              {list.items.length === 0 && (
-                <li className="text-gray-400 italic py-2 text-center">
-                  Lista jest pusta
-                </li>
-              )}
-            </ul>
+          {/* Pasek postępu */}
+          <div className="flex items-center">
+            <div className="w-full bg-indigo-800 rounded-full h-2 mr-2">
+              <div 
+                className="bg-white h-2 rounded-full" 
+                style={{ width: `${completionPercentage}%` }}
+              ></div>
+            </div>
+            <span className="text-sm text-white font-medium">
+              {completionPercentage}%
+            </span>
           </div>
         </div>
         
-        {isExpanded && (
-          <div className="px-4 pb-10">
-            <div className="flex items-center bg-dark-200 border border-dark-200/80 rounded-md overflow-hidden">
-              <input
-                type="text"
-                className="flex-grow bg-transparent border-none py-2 px-3 focus:outline-none focus:ring-0 text-white placeholder-gray-500 text-sm"
-                placeholder="Wpisz nowy element..."
-                value={newListText}
-                onChange={(e) => setNewListText(e.target.value)}
-                onKeyDown={(e) => handleListItemKeyDown(e, list.id)}
-                onBlur={() => handleItemInputBlur(list.id)}
-                onClick={(e) => e.stopPropagation()}
-                autoFocus
-              />
+        {/* Treść listy */}
+        <div className="p-4">
+          {/* Informacja o zadaniu, jeśli istnieje */}
+          {relatedTask && (
+            <div className="bg-gray-700/50 rounded-lg p-2 mb-3 flex items-center text-sm text-gray-300">
+              <Link2 size={14} className="mr-2 text-indigo-400" />
+              <span className="truncate">Przypisano do: {relatedTask.title}</span>
             </div>
-          </div>
-        )}
-        
-        {/* Centered plus button that sits on the bottom edge */}
-        <div className="absolute -bottom-6 left-0 right-0 flex justify-center">
-          <button
-            className="bg-purple-500 hover:bg-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-md"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleListExpand(list.id);
-            }}
-          >
-            <Plus size={22} />
-          </button>
-        </div>
-      </motion.div>
-    );
-  };
-
-  // Renderowanie kafelka zadania
-  const renderTaskTile = (task) => {
-    const listsForTask = getListsForTask(task.id);
-    const hasLists = listsForTask.length > 0;
-    
-    return (
-      <motion.div
-        key={task.id}
-        className="bg-dark-200 rounded-lg border border-dark-200/90 shadow-lg overflow-hidden w-full flex flex-col"
-        whileHover={{ y: -3, boxShadow: "0 8px 20px -5px rgba(0, 0, 0, 0.3)" }}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="p-4 flex justify-between items-start">
-          <div>
-            <h3 className="font-medium text-white text-lg mb-1">{task.title}</h3>
-            <div className="flex items-center text-sm text-gray-400 mb-2">
-              <Calendar size={14} className="mr-1" />
-              <span>{formatDate(task.deadline)}</span>
-              <span className="mx-2">•</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs ${
-                task.priority === 'Wysoki' || task.priority === 'Krytyczny' 
-                  ? 'bg-red-500/20 text-red-400' 
-                  : task.priority === 'Średni' 
-                    ? 'bg-yellow-500/20 text-yellow-400' 
-                    : 'bg-green-500/20 text-green-400'
-              }`}>
-                {task.priority}
-              </span>
-            </div>
-            
-            {hasLists ? (
-              <div className="text-sm text-primary/90 flex items-center">
-                <ListChecks size={14} className="mr-1" />
-                <span>Liczba list: {listsForTask.length}</span>
+          )}
+          
+          {/* Lista elementów */}
+          <div className="space-y-2 mb-3">
+            {list.items.slice(0, 3).map(item => (
+              <div 
+                key={item.id} 
+                className="flex items-center gap-2"
+              >
+                {item.completed ? (
+                  <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
+                ) : (
+                  <Circle size={16} className="text-gray-400 flex-shrink-0" />
+                )}
+                <span 
+                  className={`text-sm truncate ${
+                    item.completed ? 'line-through text-gray-500' : 'text-gray-300'
+                  }`}
+                >
+                  {item.text}
+                </span>
               </div>
-            ) : (
-              <div className="text-sm text-gray-500 flex items-center">
-                <ListChecks size={14} className="mr-1" />
-                <span>Brak list</span>
+            ))}
+            
+            {list.items.length > 3 && (
+              <div className="text-xs text-gray-400 italic">
+                +{list.items.length - 3} więcej elementów
+              </div>
+            )}
+            
+            {list.items.length === 0 && (
+              <div className="text-center py-2 text-sm text-gray-500 italic">
+                Lista jest pusta
               </div>
             )}
           </div>
           
-          <div className="flex space-x-2">
-            {hasLists && (
-              <motion.button
-                className="flex items-center bg-dark-300 hover:bg-dark-400 text-white px-3 py-1 rounded-md text-xs"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => showTaskView(task.id)}
-              >
-                <ListChecks size={14} className="mr-1" />
-                <span>Pokaż checklistę</span>
-              </motion.button>
-            )}
-            <motion.button
-              className="flex items-center bg-primary/80 hover:bg-primary text-white px-3 py-1 rounded-md text-xs"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => createNewList(task.id)}
-            >
-              <Plus size={14} className="mr-1" />
-              <span>Dodaj listę</span>
-            </motion.button>
-          </div>
+          {/* Przycisk otwierania listy */}
+          <button
+            className="mt-2 w-full py-2 px-3 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm rounded-lg flex items-center justify-center gap-1"
+            onClick={() => openList(list)}
+          >
+            <AlignLeft size={14} />
+            <span>Otwórz listę</span>
+          </button>
         </div>
-      </motion.div>
+      </div>
     );
   };
 
@@ -915,11 +786,13 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     const task = getTaskById(activeTaskId);
     if (!task) {
       return (
-        <div className="text-center py-10">
-          <div className="text-gray-400">
-            <p>Zadanie nie zostało znalezione lub zostało usunięte.</p>
+        <div className="container mx-auto py-8 px-4">
+          <div className="bg-white rounded-xl shadow-md p-8 text-center">
+            <AlertCircle size={48} className="text-red-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">Zadanie nie znalezione</h3>
+            <p className="text-gray-500 mb-6">Zadanie nie zostało znalezione lub zostało usunięte.</p>
             <button 
-              className="mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg"
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-5 py-2.5 rounded-lg"
               onClick={backToAllLists}
             >
               Powrót do list
@@ -933,85 +806,84 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     const listsForTask = filteredLists;
     
     return (
-      <div className="space-y-6">
-        <div className="flex items-center">
+      <div className="container mx-auto py-8 px-4">
+        {/* Nagłówek zadania */}
+        <div className="flex flex-col md:flex-row md:items-center mb-8 gap-4">
           <button 
-            className="text-gray-400 hover:text-white flex items-center mr-4"
+            className="flex items-center text-gray-500 hover:text-indigo-600 mr-4 transition-colors"
             onClick={backToAllLists}
           >
             <ArrowLeft size={20} className="mr-1" />
             <span>Powrót</span>
           </button>
-          <h1 className="text-2xl font-bold text-white">{task.title}</h1>
-        </div>
-        
-        <div className="bg-dark-100/30 rounded-xl p-4 flex justify-between">
-          <div className="flex space-x-6">
-            <div>
-              <div className="text-sm text-gray-400 mb-1">Termin</div>
-              <div className="text-white flex items-center">
-                <Calendar size={16} className="mr-2 text-primary" />
-                {formatDate(task.deadline)}
+          
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">{task.title}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+              <div className="flex items-center">
+                <Calendar size={16} className="mr-1" />
+                <span>{formatDate(task.deadline)}</span>
               </div>
-            </div>
-            
-            <div>
-              <div className="text-sm text-gray-400 mb-1">Priorytet</div>
-              <div className={`flex items-center ${
-                task.priority === 'Wysoki' || task.priority === 'Krytyczny' 
-                  ? 'text-red-400' 
-                  : task.priority === 'Średni' 
-                    ? 'text-yellow-400' 
-                    : 'text-green-400'
-              }`}>
-                <span className="font-medium">{task.priority}</span>
+              
+              <div className="flex items-center">
+                <Clock3 size={16} className="mr-1" />
+                <span>{task.status === 'in-progress' ? 'W trakcie' : 'Do zrobienia'}</span>
               </div>
-            </div>
-            
-            <div>
-              <div className="text-sm text-gray-400 mb-1">Status</div>
-              <div className="text-white">
-                {task.status === 'in-progress' ? 'W trakcie' : 'Do zrobienia'}
+              
+              <div className="flex items-center">
+                <Tag size={16} className="mr-1" />
+                <span className={`px-2 py-0.5 rounded-full text-xs ${
+                  task.priority === 'Wysoki' || task.priority === 'Krytyczny' 
+                    ? 'bg-red-100 text-red-700' 
+                    : task.priority === 'Średni' 
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : 'bg-green-100 text-green-700'
+                }`}>
+                  {task.priority}
+                </span>
               </div>
             </div>
           </div>
           
-          <motion.button
-            className="flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => createNewList(task.id)}
-          >
-            <Plus size={18} className="mr-2" />
-            <span>Nowa lista dla zadania</span>
-          </motion.button>
+          <div className="md:ml-auto">
+            <motion.button
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => createNewList(task.id)}
+            >
+              <Plus size={16} />
+              <span>Nowa lista zadań</span>
+            </motion.button>
+          </div>
         </div>
         
-        <div>
-          <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-            <ListChecks size={20} className="mr-2 text-primary" />
-            Listy zadania
+        {/* Listy zadań */}
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+            <ListChecks size={20} className="mr-2 text-indigo-500" />
+            Listy zadań
           </h2>
           
           {listsForTask.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {listsForTask.map(list => renderListTile(list))}
             </div>
           ) : (
-            <div className="bg-dark-100/30 rounded-xl p-6 text-center">
-              <ListChecks size={40} className="text-gray-500 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-gray-300 mb-2">Brak list dla tego zadania</h3>
-              <p className="text-gray-400 mb-4">
-                Dodaj nową listę, aby uporządkować pracę nad zadaniem
+            <div className="bg-white rounded-xl shadow-md p-8 text-center">
+              <ListChecks size={48} className="text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">Brak list dla tego zadania</h3>
+              <p className="text-gray-500 mb-6">
+                Dodaj nową listę, aby skutecznie zarządzać tym zadaniem.
               </p>
               <motion.button
-                className="flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg mx-auto"
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 mx-auto"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => createNewList(task.id)}
               >
-                <Plus size={18} className="mr-2" />
-                <span>Nowa lista</span>
+                <Plus size={18} />
+                <span>Utwórz nową listę</span>
               </motion.button>
             </div>
           )}
@@ -1020,19 +892,36 @@ const ChecklistView = ({ selectedTaskId = null }) => {
     );
   };
 
-  // Renderowanie komponentu głównego
+  // Główny widok komponentu
   return (
-    <div className="w-full">
+    <div className="w-full bg-gray-900 min-h-screen">
       {activeTaskId !== null ? (
+        // Widok dla konkretnego zadania
         renderTaskView()
       ) : (
-        <>
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-white">Moje Listy</h1>
-            <div className="flex space-x-3">
+        // Główny widok list
+        <div className="container mx-auto py-6 px-4">
+          {/* Nagłówek z tytułem i przyciskami */}
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold text-white">Moje Listy</h1>
+            
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search size={16} className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="bg-gray-800 text-white border border-gray-700 rounded-lg pl-10 pr-4 py-2 w-48 focus:outline-none focus:ring-1 focus:ring-indigo-400 placeholder-gray-400"
+                  placeholder="Szukaj list..."
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                />
+              </div>
+              
               <div className="relative">
                 <select
-                  className="appearance-none bg-dark-200 hover:bg-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="appearance-none bg-gray-800 text-white border border-gray-700 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-1 focus:ring-indigo-400"
                   value={selectedFilter}
                   onChange={(e) => setSelectedFilter(e.target.value)}
                 >
@@ -1040,296 +929,212 @@ const ChecklistView = ({ selectedTaskId = null }) => {
                   <option value="assigned">Przypisane do zadań</option>
                   <option value="unassigned">Osobiste</option>
                 </select>
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Filter size={18} className="text-gray-400" />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <ChevronDown size={16} className="text-gray-400" />
                 </div>
               </div>
               
-              <motion.button
-                className="flex items-center bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                 onClick={() => createNewList()}
               >
-                <Plus size={18} className="mr-2" />
+                <Plus size={16} />
                 <span>Nowa lista</span>
-              </motion.button>
+              </button>
             </div>
           </div>
-
-          {/* Pasek wyszukiwania */}
-          <div className="bg-dark-100/50 backdrop-blur-sm rounded-xl border border-dark-100/80 shadow-lg p-4 mb-6">
-            <div className="relative w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={18} className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                className="w-full bg-dark-200 border border-dark-100 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                placeholder="Szukaj list..."
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-              />
+          
+          {/* Wyświetlanie list */}
+          {filteredLists.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredLists.map(list => renderListTile(list))}
             </div>
-          </div>
-
-          {/* Zadania - widoczne tylko gdy filtr ustawiony na "assigned" */}
-          {selectedFilter === 'assigned' && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-                <CheckSquare size={20} className="mr-2 text-primary" />
-                Zadania
-              </h2>
-              <div className="space-y-4">
-                {tasks.map(task => renderTaskTile(task))}
-              </div>
+          ) : (
+            <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center">
+              <ListChecks size={48} className="text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Brak list</h3>
+              <p className="text-gray-400 mb-6">
+                {searchValue ? 'Nie znaleziono list pasujących do kryteriów wyszukiwania.' : 'Nie masz jeszcze żadnych list. Utwórz swoją pierwszą listę, aby rozpocząć organizację zadań.'}
+              </p>
+              <button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 mx-auto"
+                onClick={() => createNewList()}
+              >
+                <Plus size={18} />
+                <span>Utwórz nową listę</span>
+              </button>
             </div>
           )}
-
-          {/* Lista kafelków */}
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-              <ListChecks size={20} className="mr-2 text-primary" />
-              Listy {selectedFilter === 'assigned' ? 'przypisane do zadań' : 
-                     selectedFilter === 'unassigned' ? 'osobiste' : ''}
-            </h2>
-            
-            {filteredLists.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredLists.map(list => renderListTile(list))}
-              </div>
-            ) : (
-              <div className="text-center py-10">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-gray-400"
-                >
-                  <div className="mb-4 flex justify-center">
-                    <ListChecks size={48} className="text-gray-500" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-300 mb-1">Brak list</h3>
-                  <p className="text-gray-400">
-                    {searchValue ? "Nie znaleziono list pasujących do wyszukiwania" : "Dodaj nową listę, aby rozpocząć"}
-                  </p>
-                </motion.div>
-              </div>
-            )}
-          </div>
-        </>
+        </div>
       )}
-
-      {/* Modal edytora listy */}
-      <AnimatePresence>
-        {showListModal && currentList && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
-            <motion.div
-              ref={modalRef}
-              className="bg-dark-100 rounded-xl border border-dark-100/80 shadow-2xl w-[800px] max-w-[90vw] max-h-[80vh] overflow-hidden flex flex-col"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {/* Nagłówek modalu */}
-              <div className="flex justify-between items-center border-b border-dark-200 p-4">
-                {isEditingTitle ? (
-                  <input
-                    ref={titleInputRef}
-                    type="text"
-                    className="text-xl font-bold text-white bg-dark-200 border border-primary px-3 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 w-full max-w-[400px]"
-                    value={newListTitle}
-                    onChange={(e) => setNewListTitle(e.target.value)}
-                    onBlur={() => setIsEditingTitle(false)}
-                    onKeyDown={handleTitleKeyDown}
-                  />
-                ) : (
-                  <div className="flex items-center">
-                    <h2 className="text-xl font-bold text-white mr-2">{currentList.title}</h2>
-                    <button 
-                      className="text-gray-400 hover:text-white p-1 rounded-md"
-                      onClick={() => setIsEditingTitle(true)}
-                    >
-                      <Pencil size={16} />
-                    </button>
-                  </div>
-                )}
-                
-                <div className="flex items-center space-x-3">
-                  <div>
-                    <select
-                      className="appearance-none bg-dark-200 hover:bg-dark-100 text-white px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      value={currentList.taskId || 'none'}
-                      onChange={(e) => assignListToTask(e.target.value)}
-                    >
-                      <option value="none">Lista osobista</option>
-                      <optgroup label="Przypisz do zadania">
-                        {tasks.map(task => (
-                          <option key={task.id} value={task.id}>{task.title}</option>
-                        ))}
-                      </optgroup>
-                    </select>
-                  </div>
-                  <button 
-                    className="text-gray-400 hover:text-red-500 p-1.5 bg-dark-200 rounded-md"
-                    onClick={() => initiateDeleteList(currentList.id)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  <button 
-                    className="text-gray-400 hover:text-white p-1.5 bg-dark-200 rounded-md"
-                    onClick={closeListModal}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
+      
+      {/* Modal do tworzenia/edycji listy */}
+      {showListModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div 
+            className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl w-full max-w-md overflow-hidden"
+            ref={modalRef}
+          >
+            <div className="px-5 py-4 bg-indigo-600 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-white">
+                {currentList?.id ? 'Edytuj listę' : 'Nowa lista'}
+              </h3>
+              <button 
+                className="text-white/80 hover:text-white p-1.5 hover:bg-indigo-500/40 rounded-full"
+                onClick={closeListModal}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-5">
+              <div className="mb-4">
+                <label htmlFor="listTitle" className="block text-sm font-medium text-gray-300 mb-1">Tytuł listy</label>
+                <input
+                  id="listTitle"
+                  type="text"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-400 text-white"
+                  placeholder="Wprowadź tytuł..."
+                  value={newListTitle}
+                  onChange={(e) => setNewListTitle(e.target.value)}
+                  ref={titleInputRef}
+                />
               </div>
               
-              {/* Zawartość modalu */}
-              <div className="flex-grow overflow-auto p-4">
-                {/* Drag and drop lista elementów */}
-                <Reorder.Group
-                  axis="y"
-                  values={currentList.items}
-                  onReorder={updateItemsOrder}
-                  className="space-y-2 mb-4"
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-300 mb-1">Przypisz do zadania</label>
+                <select
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-400 text-white"
+                  value={currentList?.taskId || 'none'}
+                  onChange={(e) => assignListToTask(e.target.value)}
                 >
-                  {currentList.items.map((item) => (
-                    <Reorder.Item 
-                      key={item.id} 
-                      value={item}
-                      className="bg-dark-200/70 rounded-md flex items-start p-3 border border-dark-100/50 group"
-                      dragListener={false} // Wyłączamy domyślny drag na całym elemencie
-                      layoutId={`item-${item.id}`}
-                    >
-                      <div className="cursor-move flex-shrink-0 mr-2 text-gray-500 hover:text-gray-300 mt-1 touch-none">
-                        <GripVertical size={16} />
-                      </div>
-                      
-                      <button 
-                        className="flex-shrink-0 mr-2 mt-1"
-                        onClick={(e) => toggleItemCompletion(item.id)}
-                      >
-                        {item.completed ? (
-                          <CheckCircle2 size={18} className="text-green-500" />
-                        ) : (
-                          <Circle size={18} className="text-gray-500" />
-                        )}
-                      </button>
-                      
-                      <div className="flex-grow">
-                        <input
-                          type="text"
-                          className={`w-full bg-transparent border-none p-0 focus:outline-none focus:ring-0 ${
-                            item.completed ? 'text-gray-400 line-through' : 'text-white'
-                          }`}
-                          value={item.text}
-                          onChange={(e) => updateItemText(item.id, e.target.value)}
-                        />
-                      </div>
-                      
-                      <button 
-                        className="flex-shrink-0 ml-2 text-transparent group-hover:text-gray-400 hover:text-red-500"
-                        onClick={() => removeItemFromList(item.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </Reorder.Item>
-                  ))}
-                </Reorder.Group>
+                  <option value="none">Lista osobista</option>
+                  <optgroup label="Przypisz do zadania">
+                    {tasks.map(task => (
+                      <option key={task.id} value={task.id}>{task.title}</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+              
+              <div className="border-t border-gray-700 -mx-5 px-5 pt-4 mt-4">
+                <h4 className="font-medium text-white mb-3">Elementy listy</h4>
+                {currentList?.items && currentList.items.length > 0 ? (
+                  <ul className="mb-4 max-h-56 overflow-y-auto space-y-2">
+                    {currentList.items.map((item) => (
+                      <li key={item.id} className="py-2 flex items-center gap-3 hover:bg-gray-700/30 px-2 rounded">
+                        <button 
+                          className="flex-shrink-0"
+                          onClick={() => toggleItemCompletion(item.id)}
+                        >
+                          {item.completed ? (
+                            <CheckCircle size={20} className="text-green-500" />
+                          ) : (
+                            <Circle size={20} className="text-gray-400" />
+                          )}
+                        </button>
+                        <span className={`flex-grow ${item.completed ? 'line-through text-gray-500' : 'text-gray-200'}`}>
+                          {item.text}
+                        </span>
+                        <button 
+                          className="text-gray-400 hover:text-red-400"
+                          onClick={() => removeItemFromList(item.id)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-500 italic text-center py-4">
+                    Lista jest pusta
+                  </p>
+                )}
                 
-                {/* Dodawanie nowego elementu */}
-                <div className="flex items-center bg-dark-200/30 border border-dark-100/30 rounded-md p-2">
-                  <div className="mr-2 text-gray-500">
-                    <Plus size={18} />
-                  </div>
+                <div className="flex items-center">
                   <input
-                    ref={newItemInputRef}
                     type="text"
-                    className="flex-grow bg-transparent border-none p-1 focus:outline-none focus:ring-0 text-white placeholder-gray-500"
+                    className="flex-grow bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-400 text-white"
                     placeholder="Dodaj nowy element..."
                     value={newItemText}
                     onChange={(e) => setNewItemText(e.target.value)}
                     onKeyDown={handleNewItemKeyDown}
+                    ref={newItemInputRef}
                   />
                   <button
-                    className="ml-2 px-3 py-1 bg-primary/80 hover:bg-primary text-white rounded-md text-sm"
+                    className="ml-2 bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg"
                     onClick={addNewItem}
                   >
-                    Dodaj
+                    <Plus size={20} />
                   </button>
                 </div>
               </div>
               
-              {/* Stopka modalu */}
-              <div className="bg-dark-200/50 p-3 flex justify-between items-center border-t border-dark-200">
-                <div className="text-xs text-gray-400">
-                  Ostatnia edycja: {formatDate(currentList.updatedAt)}
-                </div>
-                
+              <div className="flex justify-end gap-3 mt-6">
                 <button
-                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm"
+                  className="px-4 py-2 text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg"
+                  onClick={closeListModal}
+                >
+                  Anuluj
+                </button>
+                <button
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg"
                   onClick={saveList}
                 >
-                  Zapisz zmiany
+                  Zapisz
                 </button>
               </div>
-            </motion.div>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal potwierdzenia usunięcia */}
-      <AnimatePresence>
-        {showDeleteModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
-            <motion.div
-              ref={deleteModalRef}
-              className="bg-dark-100 rounded-xl border border-dark-100/80 shadow-2xl w-full max-w-md overflow-hidden"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex justify-between items-center border-b border-dark-200 p-4">
-                <h2 className="text-xl font-bold text-white flex items-center">
-                  <AlertCircle size={20} className="text-red-500 mr-2" />
-                  Potwierdź usunięcie
-                </h2>
-                <button 
-                  className="text-gray-400 hover:text-white rounded-full p-1"
-                  onClick={() => setShowDeleteModal(false)}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              
-              <div className="p-4">
-                <p className="text-gray-300 mb-4">
-                  Czy na pewno chcesz usunąć tę listę? Wszystkie elementy zostaną trwale usunięte.
-                </p>
-                
-                <div className="flex gap-3 justify-end">
-                  <button
-                    className="px-4 py-2 bg-dark-200 hover:bg-dark-100 text-white rounded-lg"
-                    onClick={() => setShowDeleteModal(false)}
-                  >
-                    Anuluj
-                  </button>
-                  <motion.button
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={deleteList}
-                  >
-                    Usuń listę
-                  </motion.button>
+        </div>
+      )}
+      
+      {/* Modal do usuwania listy */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div 
+            className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl w-full max-w-md overflow-hidden"
+            ref={deleteModalRef}
+          >
+            <div className="px-5 py-4 bg-red-600 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-white">Usuń listę</h3>
+              <button 
+                className="text-white/80 hover:text-white p-1.5 hover:bg-red-500/40 rounded-full"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-5">
+              <div className="flex gap-4 mb-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertCircle size={22} className="text-red-600" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-white">Potwierdzenie usunięcia</h4>
+                  <p className="text-gray-300">Czy na pewno chcesz usunąć tę listę? Tej operacji nie można cofnąć.</p>
                 </div>
               </div>
-            </motion.div>
+              
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  className="px-4 py-2 text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Anuluj
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg"
+                  onClick={deleteList}
+                >
+                  Usuń
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };

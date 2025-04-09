@@ -22,9 +22,9 @@ import {
   ListChecks,
 } from 'lucide-react';
 
-// Importujemy komponent widoku zadań i checklisty
+// Importujemy komponent widoku zadań i listy do zrobienia
 import TasksView from './TasksView';
-import ChecklistView from './ChecklistView';
+import ListaDoZrobienia from './ListaDoZrobienia';
 import SettingsView from './SettingsView';
 import RoadmapView from './RoadmapView';
 
@@ -64,7 +64,7 @@ const Dashboard = ({ initialView = 'home' }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'tasks', icon: CheckSquare, label: 'Zadania' },
-    { id: 'checklist', icon: ListChecks, label: 'Lista To-Do' },
+    { id: 'checklist', icon: ListChecks, label: 'Lista do zrobienia' },
     { id: 'roadmap', icon: Map, label: 'Roadmapa' },
     { id: 'favorites', icon: Star, label: 'Ulubione' },
     { id: 'settings', icon: Settings, label: 'Ustawienia' },
@@ -140,7 +140,7 @@ const Dashboard = ({ initialView = 'home' }) => {
       case 'tasks':
         return <TasksView />;
       case 'checklist':
-        return <ChecklistView selectedTaskId={selectedTaskId} />;
+        return <ListaDoZrobienia selectedTaskId={selectedTaskId} />;
       case 'settings':
         return <SettingsView />;
       case 'roadmap':
