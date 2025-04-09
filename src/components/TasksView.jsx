@@ -17,7 +17,8 @@ import {
   X,
   AlertCircle,
   PlayCircle,
-  ListChecks
+  ListChecks,
+  ListPlus
 } from 'lucide-react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -28,7 +29,7 @@ const ItemTypes = {
 };
 
 // Komponent reprezentujący pojedyncze zadanie z obsługą drag and drop
-const TaskCard = ({ task, changeTaskStatus, openEditTaskModal, initiateDeleteTask, hasRelatedChecklists, goToChecklist, formatDate, getPriorityColor }) => {
+const TaskCard = ({ task, changeTaskStatus, openEditTaskModal, initiateDeleteTask, hasRelatedChecklists, goToChecklist, formatDate, getPriorityColor, createTaskChecklist }) => {
   // Poprawiona implementacja drag operacji
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.TASK,
@@ -48,7 +49,7 @@ const TaskCard = ({ task, changeTaskStatus, openEditTaskModal, initiateDeleteTas
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     }),
-  }), [task.id, task.status]); // Dodajemy zależności, aby useDrag odświeżał się, gdy zmieni się task.id lub task.status
+  }), [task.id, task.status]);
 
   return (
     <div
@@ -66,20 +67,23 @@ const TaskCard = ({ task, changeTaskStatus, openEditTaskModal, initiateDeleteTas
           <h3 className={`text-lg font-medium ${task.status === 'completed' ? 'text-gray-400 line-through' : 'text-white'}`}>
             {task.title}
           </h3>
-          <div className="flex gap-4 bg-dark-200/80 rounded-lg p-1 -mt-1 -mr-1 border border-dark-100/30">
+          <div className="flex gap-2 bg-dark-200/80 rounded-lg p-1 -mt-1 -mr-1 border border-dark-100/30">
             <motion.button 
               className="text-gray-400 hover:text-primary p-1 rounded transition-colors duration-200"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => openEditTaskModal(task.id)}
+              title="Edytuj zadanie"
             >
               <Edit size={16} />
             </motion.button>
+            
             <motion.button 
               className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors duration-200"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => initiateDeleteTask(task.id)}
+              title="Usuń zadanie"
             >
               <Trash2 size={16} />
             </motion.button>
@@ -113,25 +117,33 @@ const TaskCard = ({ task, changeTaskStatus, openEditTaskModal, initiateDeleteTas
           </div>
         </div>
         
-        {hasRelatedChecklists(task.id) && (
-          <div className="mt-2 flex justify-end">
-            <motion.button 
-              className="flex items-center text-xs text-primary hover:text-primary/70"
-              whileHover={{ scale: 1.05 }}
+        {/* Sekcja z listami zadań */}
+        <div className="mt-3 pt-2 border-t border-dark-100/30">
+          {hasRelatedChecklists(task.id) ? (
+            <button
+              className="flex items-center text-xs text-primary hover:text-primary/80 transition-colors"
               onClick={() => goToChecklist(task.id)}
             >
               <ListChecks size={14} className="mr-1" />
-              Pokaż listę
-            </motion.button>
-          </div>
-        )}
+              <span>Pokaż listy zadania</span>
+            </button>
+          ) : (
+            <button
+              className="flex items-center text-xs text-gray-400 hover:text-primary transition-colors"
+              onClick={() => createTaskChecklist(task.id)}
+            >
+              <ListPlus size={14} className="mr-1" />
+              <span>Utwórz listę dla zadania</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 // Komponent reprezentujący kolumnę zadań
-const TaskColumn = ({ title, status, tasks, changeTaskStatus, openEditTaskModal, initiateDeleteTask, hasRelatedChecklists, goToChecklist, formatDate, getPriorityColor, iconComponent }) => {
+const TaskColumn = ({ title, status, tasks, changeTaskStatus, openEditTaskModal, initiateDeleteTask, hasRelatedChecklists, goToChecklist, formatDate, getPriorityColor, iconComponent, createTaskChecklist }) => {
   // Poprawiony sposób obsługi drop operacji
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.TASK,
@@ -145,7 +157,7 @@ const TaskColumn = ({ title, status, tasks, changeTaskStatus, openEditTaskModal,
     collect: (monitor) => ({
       isOver: !!monitor.isOver() && monitor.canDrop(),
     }),
-  }), [status, changeTaskStatus]); // Dodajemy zależności, aby useDrop odświeżał się, gdy zmieni się status lub changeTaskStatus
+  }), [status, changeTaskStatus]);
 
   return (
     <div 
@@ -173,6 +185,7 @@ const TaskColumn = ({ title, status, tasks, changeTaskStatus, openEditTaskModal,
               goToChecklist={goToChecklist}
               formatDate={formatDate}
               getPriorityColor={getPriorityColor}
+              createTaskChecklist={createTaskChecklist}
             />
           ))
         ) : (
@@ -485,6 +498,15 @@ const TasksView = () => {
     }
   };
 
+  // Funkcja tworząca nową listę dla zadania
+  const createTaskChecklist = (taskId) => {
+    if (window.createChecklistForTask) {
+      window.createChecklistForTask(taskId);
+    } else {
+      console.log(`Creating checklist for task ${taskId}`);
+    }
+  };
+
   // Przykładowe dane zadań
   const [tasks, setTasks] = useState([
     { 
@@ -682,10 +704,10 @@ const TasksView = () => {
 
       {/* Kanban Board - trzy kolumny */}
       <DndProvider backend={HTML5Backend}>
-        <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-240px)]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4 min-h-[500px]">
           <TaskColumn 
             title="Do zrobienia" 
-            status="to-do"
+            status="to-do" 
             tasks={todoTasks}
             changeTaskStatus={changeTaskStatus}
             openEditTaskModal={openEditTaskModal}
@@ -694,12 +716,12 @@ const TasksView = () => {
             goToChecklist={goToChecklist}
             formatDate={formatDate}
             getPriorityColor={getPriorityColor}
-            iconComponent={<Circle size={18} className="text-gray-400" />}
+            createTaskChecklist={createTaskChecklist}
+            iconComponent={<CheckSquare size={20} />}
           />
-          
           <TaskColumn 
             title="W trakcie" 
-            status="in-progress"
+            status="in-progress" 
             tasks={inProgressTasks}
             changeTaskStatus={changeTaskStatus}
             openEditTaskModal={openEditTaskModal}
@@ -708,12 +730,12 @@ const TasksView = () => {
             goToChecklist={goToChecklist}
             formatDate={formatDate}
             getPriorityColor={getPriorityColor}
-            iconComponent={<PlayCircle size={18} className="text-blue-400" />}
+            createTaskChecklist={createTaskChecklist}
+            iconComponent={<PlayCircle size={20} />}
           />
-          
           <TaskColumn 
-            title="Ukończone" 
-            status="completed"
+            title="Zakończone" 
+            status="completed" 
             tasks={completedTasks}
             changeTaskStatus={changeTaskStatus}
             openEditTaskModal={openEditTaskModal}
@@ -722,7 +744,8 @@ const TasksView = () => {
             goToChecklist={goToChecklist}
             formatDate={formatDate}
             getPriorityColor={getPriorityColor}
-            iconComponent={<CheckCircle2 size={18} className="text-green-500" />}
+            createTaskChecklist={createTaskChecklist}
+            iconComponent={<CheckCircle2 size={20} />}
           />
         </div>
       </DndProvider>

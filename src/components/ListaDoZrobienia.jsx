@@ -125,6 +125,22 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
     if (selectedTaskId) {
       setActiveTaskId(Number(selectedTaskId));
       setSelectedFilter('przypisane');
+      
+      // Sprawdzenie, czy powinna być utworzona nowa lista dla zadania
+      const shouldCreateList = sessionStorage.getItem('createNewList') === 'true';
+      if (shouldCreateList) {
+        // Usunięcie flagi z sessionStorage
+        sessionStorage.removeItem('createNewList');
+        // Otworzenie modalki tworzenia nowej listy
+        const newList = {...emptyList, taskId: Number(selectedTaskId)};
+        const task = getTaskById(Number(selectedTaskId));
+        if (task) {
+          newList.title = `Lista dla ${task.title}`;
+        }
+        setCurrentList(newList);
+        setNewListTitle(newList.title);
+        setShowListModal(true);
+      }
     }
   }, [selectedTaskId]);
 

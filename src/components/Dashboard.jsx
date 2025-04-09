@@ -53,11 +53,21 @@ const Dashboard = ({ initialView = 'home' }) => {
     setSelectedTaskId(taskId);
   };
 
-  // Dodajemy funkcję do globalnego obiektu window, aby inne komponenty mogły jej używać
+  // Funkcja tworzenia nowej listy dla konkretnego zadania
+  const createChecklistForTask = (taskId) => {
+    setActiveItem('checklist');
+    setSelectedTaskId(taskId);
+    // Dodanie parametru, który będzie sygnalizował potrzebę utworzenia nowej listy
+    sessionStorage.setItem('createNewList', 'true');
+  };
+
+  // Dodajemy funkcje do globalnego obiektu window, aby inne komponenty mogły ich używać
   useEffect(() => {
     window.navigateToChecklist = navigateToChecklist;
+    window.createChecklistForTask = createChecklistForTask;
     return () => {
       delete window.navigateToChecklist;
+      delete window.createChecklistForTask;
     };
   }, []);
 
