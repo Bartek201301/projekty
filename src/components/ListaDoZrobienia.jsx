@@ -10,7 +10,8 @@ import {
   X, 
   Filter, 
   Clock,
-  GripVertical
+  GripVertical,
+  Link2
 } from 'lucide-react';
 
 const ListaDoZrobienia = ({ selectedTaskId = null }) => {
@@ -87,6 +88,38 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
     }
   ]);
 
+  // Dane przykładowych zadań
+  const [tasks, setTasks] = useState([
+    { 
+      id: 1, 
+      title: 'Przygotowanie prezentacji dla klienta', 
+      deadline: '2023-12-01', 
+      priority: 'Wysoki', 
+      status: 'in-progress',
+    },
+    { 
+      id: 2, 
+      title: 'Analiza danych z ostatniego kwartału', 
+      deadline: '2023-11-30', 
+      priority: 'Średni', 
+      status: 'to-do',
+    },
+    { 
+      id: 3, 
+      title: 'Aktualizacja dokumentacji projektu', 
+      deadline: '2023-11-25', 
+      priority: 'Niski', 
+      status: 'to-do',
+    },
+    { 
+      id: 4, 
+      title: 'Poprawa błędów w aplikacji', 
+      deadline: '2023-11-20', 
+      priority: 'Krytyczny', 
+      status: 'in-progress',
+    },
+  ]);
+
   // Efekty
   useEffect(() => {
     if (selectedTaskId) {
@@ -132,7 +165,7 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
   const getFilteredLists = () => {
     switch (selectedFilter) {
       case 'przypisane':
-        return todoLists.filter(list => list.taskId === activeTaskId);
+        return todoLists.filter(list => list.taskId !== null);
       case 'własne':
         return todoLists.filter(list => list.taskId === null);
       case 'ukończone':
@@ -157,8 +190,19 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
 
   // Funkcje do zarządzania listami
   const createNewList = () => {
-    setCurrentList({...emptyList});
-    setNewListTitle('Nowa lista');
+    const newList = {...emptyList};
+    
+    // Jeśli mamy aktywne zadanie, tworzymy dla niego listę
+    if (activeTaskId) {
+      const task = getTaskById(activeTaskId);
+      if (task) {
+        newList.title = `Lista dla ${task.title}`;
+        newList.taskId = activeTaskId;
+      }
+    }
+    
+    setCurrentList(newList);
+    setNewListTitle(newList.title);
     setShowListModal(true);
   };
 
@@ -271,6 +315,12 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
     return list.items.filter(item => item.completed).length;
   };
 
+  // Funkcja pobierająca zadanie po ID
+  const getTaskById = (taskId) => {
+    if (!taskId) return null;
+    return tasks.find(task => task.id === Number(taskId));
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Nagłówek */}
@@ -362,7 +412,10 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
             onClick={createNewList}
           >
             <Plus size={18} className="mr-2" />
-            Nowa lista
+            {activeTaskId && selectedFilter === 'przypisane' ? 
+              `Nowa lista dla ${getTaskById(activeTaskId)?.title.substring(0, 15)}${getTaskById(activeTaskId)?.title.length > 15 ? '...' : ''}` : 
+              'Nowa lista'
+            }
           </motion.button>
         </div>
       </div>
@@ -449,6 +502,18 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
                       Otwórz
                     </button>
                   </div>
+                  
+                  {/* Informacja o przypisanym zadaniu */}
+                  {list.taskId && (
+                    <div className="mt-3 pt-3 border-t border-dark-100/80">
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <Link2 size={14} className="text-primary/80" />
+                        <span className="truncate">
+                          Przypisano do: {getTaskById(list.taskId)?.title || "Zadanie"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -462,7 +527,11 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
           <p className="text-gray-400 text-center mb-6">
             {selectedFilter === 'wszystkie' 
               ? 'Nie masz jeszcze żadnych list. Utwórz swoją pierwszą listę do zrobienia!' 
-              : 'Nie znaleziono list spełniających wybrane kryteria.'}
+              : selectedFilter === 'przypisane' && activeTaskId
+                ? `Nie masz jeszcze list przypisanych do zadania "${getTaskById(activeTaskId)?.title || 'wybrane'}". Utwórz pierwszą listę dla tego zadania!`
+                : selectedFilter === 'przypisane'
+                  ? 'Nie masz jeszcze list przypisanych do zadań. Utwórz listę i przypisz ją do zadania.'
+                  : 'Nie znaleziono list spełniających wybrane kryteria.'}
           </p>
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -520,6 +589,36 @@ const ListaDoZrobienia = ({ selectedTaskId = null }) => {
                   >
                     <X size={24} />
                   </button>
+                </div>
+
+                {/* Wybór przypisanego zadania */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Przypisz do zadania</label>
+                  <div className="relative">
+                    <select 
+                      className="w-full bg-dark-100 text-white p-3 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50 pr-10"
+                      value={currentList?.taskId || ""}
+                      onChange={(e) => {
+                        const selectedValue = e.target.value === "" ? null : Number(e.target.value);
+                        setCurrentList({
+                          ...currentList, 
+                          taskId: selectedValue
+                        });
+                      }}
+                    >
+                      <option value="">Brak przypisania</option>
+                      {tasks.map(task => (
+                        <option key={task.id} value={task.id}>
+                          {task.title}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mb-6">
