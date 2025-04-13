@@ -98,7 +98,36 @@ function initModals() {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             
-            // Show success message (in a real app, this would be after server validation)
+            // Sprawdzenie czy to formularz logowania
+            if (form.closest('.modal') && form.closest('.modal').id === 'login-modal') {
+                const emailInput = form.querySelector('#email');
+                const passwordInput = form.querySelector('#password');
+                
+                // Sprawdzenie podanych danych logowania
+                if (emailInput && passwordInput && 
+                    emailInput.value === 'bartekswiridow@gmail.com' && 
+                    passwordInput.value === 'projektprzybyl') {
+                    
+                    // Mock form processing
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Przetwarzanie...';
+                    
+                    setTimeout(() => {
+                        // Przekierowanie do dashboardu po poprawnym logowaniu
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                    
+                    return;
+                } else if (emailInput && passwordInput && 
+                          (emailInput.value !== '' || passwordInput.value !== '')) {
+                    // Pokazanie błędu dla niepoprawnych danych
+                    showNotification('Niepoprawne dane logowania', 'error');
+                    return;
+                }
+            }
+            
+            // Obsługa innych formularzy (bez zmian)
             const formType = form.closest('.modal') ? 
                 (form.closest('.modal').id === 'login-modal' ? 'logowania' : 'rejestracji') : 
                 'wysyłania wiadomości';
